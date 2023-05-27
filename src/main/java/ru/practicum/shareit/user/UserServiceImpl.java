@@ -7,6 +7,7 @@ import ru.practicum.shareit.exception.InvalidInputException;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -49,7 +50,7 @@ public class UserServiceImpl implements UserServiceInterface {
             throw new InvalidInputException("User with id " + id + " not found");
         }
         User userByEmail = userStorage.getUserByEmail(user.getEmail());
-        if ((userByEmail != null) && (userByEmail.getId() != id)) {
+        if ((userByEmail != null) && (!Objects.equals(userByEmail.getId(), id))) {
             throw new InvalidInputException("User with email " + user.getEmail() + " already exists");
         }
         userStorage.update(id, UserMapper.toUser(user));

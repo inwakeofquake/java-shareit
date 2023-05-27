@@ -68,7 +68,7 @@ public class ItemServiceImpl implements ItemServiceInterface {
     @Override
     public List<Item> getAll(Long userId) {
         return itemStorage.values().stream()
-                .filter(item -> item.getOwner().getId() == userId)
+                .filter(item -> item.getOwner().getId().equals(userId))
                 .collect(Collectors.toList());
     }
 
