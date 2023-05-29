@@ -3,7 +3,7 @@ package ru.practicum.shareit.user;
 import lombok.*;
 
 import javax.validation.constraints.Email;
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Getter
@@ -14,9 +14,9 @@ import javax.validation.constraints.NotNull;
 public class User {
     @NotNull
     private Long id;
-    @NotEmpty
+    @NotBlank
     private String name;
     @Email
-    @NotEmpty
+    @NotBlank
     private String email;
 }

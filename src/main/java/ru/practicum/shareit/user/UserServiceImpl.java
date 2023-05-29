@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserServiceInterface {
         }
         userStorage.update(id, UserMapper.toUser(user));
         User updatedUser = userStorage.get(id);
-        log.info("Обновлен пользователь c {} на {}", sourceUser, updatedUser);
+        log.info("User with ID {} has been updated and has ID {}", sourceUser, updatedUser);
         return UserMapper.toUserDto(updatedUser);
     }
 
@@ -63,6 +63,5 @@ public class UserServiceImpl implements UserServiceInterface {
     public void delete(Long id) {
         userStorage.delete(id);
     }
-
 
 }

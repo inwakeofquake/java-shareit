@@ -3,7 +3,7 @@ package ru.practicum.shareit.item.model;
 import lombok.*;
 import ru.practicum.shareit.user.User;
 
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Getter
@@ -16,10 +16,10 @@ public class Item {
     @NotNull
     private Long id;
 
-    @NotEmpty
+    @NotBlank
     private String name;
 
-    @NotEmpty
+    @NotBlank
     private String description;
 
     private Boolean available;

@@ -3,7 +3,6 @@ package ru.practicum.shareit.user;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
 
@@ -19,41 +18,43 @@ public class UserController {
     private final UserServiceInterface userService;
 
     @PostMapping
-    public ResponseEntity<UserDto> addUser(@RequestBody @Valid UserDto userDto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserDto add(@RequestBody @Valid UserDto userDto) {
         log.info("Adding user {}", userDto.getName());
         UserDto addedUser = userService.add(userDto);
         log.info("User {} has been added", addedUser.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(addedUser);
+        return addedUser;
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDto> getUser(@PathVariable Long userId) {
+    @ResponseStatus(HttpStatus.OK)
+    public UserDto get(@PathVariable Long userId) {
         log.info("Fetching user with id {}", userId);
         UserDto user = userService.getById(userId);
         log.info("Fetched user with id {}", userId);
-        return ResponseEntity.ok(user);
+        return user;
     }
 
     @PatchMapping("/{userId}")
-    public ResponseEntity<UserDto> update(@PathVariable Long userId, @RequestBody UserDto user) {
+    @ResponseStatus(HttpStatus.OK)
+    public UserDto update(@PathVariable Long userId, @RequestBody UserDto user) {
         log.info("Updating user: {}", user);
-        return ResponseEntity.status(HttpStatus.OK).body(userService.update(userId, user));
+        return userService.update(userId, user);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDto>> getAllUsers() {
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto> getAll() {
         log.info("Fetching all users");
         List<UserDto> users = userService.getAll();
         log.info("Fetched all users");
-        return ResponseEntity.ok(users);
+        return users;
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseStatus(HttpStatus.OK)
     public void delete(@PathVariable Long id) {
         log.info("Deleting user with id : {}", id);
         userService.delete(id);
     }
-
 }
-

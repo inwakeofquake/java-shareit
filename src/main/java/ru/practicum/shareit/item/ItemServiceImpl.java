@@ -1,11 +1,13 @@
 package ru.practicum.shareit.item;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.exception.NoSuchIdException;
+import ru.practicum.shareit.exception.UnauthorizedAccessException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
@@ -18,12 +20,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class ItemServiceImpl implements ItemServiceInterface {
 
     @Autowired
-    private UserStorageInterface userStorage;
+    private final UserStorageInterface userStorage;
     @Autowired
-    private ItemStorageInterface itemStorage;
+    private final ItemStorageInterface itemStorage;
 
     @Override
     public Item add(@Valid ItemDto itemDto, Long userId) {
@@ -83,6 +86,18 @@ public class ItemServiceImpl implements ItemServiceInterface {
                         && (item.getName().toLowerCase().contains(lowerText)
                         || item.getDescription().toLowerCase().contains(lowerText)))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void delete(Long id, Long userId) {
+        Item item = itemStorage.get(id);
+        if (item == null) {
+            throw new NoSuchIdException("Item with id " + id + " not found.");
+        }
+        if (!item.getOwner().getId().equals(userId)) {
+            throw new UnauthorizedAccessException("User with id " + userId + " is not allowed to delete this item.");
+        }
+        itemStorage.delete(id);
     }
 }
 

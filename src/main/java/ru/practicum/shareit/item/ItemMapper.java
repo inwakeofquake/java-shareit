@@ -6,6 +6,9 @@ import ru.practicum.shareit.user.UserMapper;
 
 public class ItemMapper {
     public static ItemDto toItemDto(Item item) {
+        if (item == null) {
+            return null;
+        }
         return ItemDto.builder()
                 .id(item.getId())
                 .name(item.getName())
@@ -16,6 +19,9 @@ public class ItemMapper {
     }
 
     public static Item toItem(ItemDto itemDto) {
+        if (itemDto == null) {
+            return null;
+        }
         Item item = new Item();
         item.setId(itemDto.getId());
         item.setName(itemDto.getName());

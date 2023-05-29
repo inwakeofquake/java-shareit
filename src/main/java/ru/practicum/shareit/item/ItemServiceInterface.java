@@ -16,4 +16,6 @@ public interface ItemServiceInterface {
     List<Item> getAll(Long userId);
 
     List<Item> search(String text);
+
+    void delete(Long id, Long userId);
 }
