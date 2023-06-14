@@ -1,33 +1,26 @@
-package ru.practicum.shareit.item.model;
+package ru.practicum.shareit.request;
 
 import lombok.*;
 import ru.practicum.shareit.user.User;
 
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Item {
+public class ItemRequest {
 
     @NotNull
     private Long id;
-
-    @NotBlank
-    private String name;
-
-    @NotBlank
+    @NotEmpty
     private String description;
-
-    private Boolean available;
-
     @NotNull
-    private User owner;
-
-    private String request;
+    private User requestor;
+    @NotNull
+    private LocalDateTime created;
 }
-
 
