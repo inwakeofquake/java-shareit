@@ -80,7 +80,7 @@ public class ItemServiceImpl implements ItemServiceInterface {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
 
         ItemDto itemDto;
-        if (item.getOwner().getId() == userId) {
+        if (item.getOwner().getId().equals(userId)) {
             itemDto = setLastNextBookings(item);
         } else
             itemDto = ItemMapper.toItemDto(item);
