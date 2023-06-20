@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 public class ItemController {
 
     private final ItemServiceInterface itemService;
+    private final CommentRepository commentRepository;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -40,19 +42,17 @@ public class ItemController {
 
     @GetMapping("/{itemId}")
     @ResponseStatus(HttpStatus.OK)
-    public ItemDto get(@PathVariable Long itemId) {
-        Item item = itemService.get(itemId);
+    public ItemDto get(@PathVariable Long itemId,
+                       @RequestHeader(value = "X-Sharer-User-Id", required = false, defaultValue = "-1") Long userId) {
+        ItemDto item = itemService.get(itemId, userId);
         log.info("Getting item {}", item.getName());
-        return ItemMapper.toItemDto(item);
+        return item;
     }
 
     @GetMapping
     public List<ItemDto> getAll(@RequestHeader("X-Sharer-User-Id") Long userId) {
         log.info("Getting all items shared by user with ID {}", userId);
-        return itemService.getAll(userId)
-                .stream()
-                .map(ItemMapper::toItemDto)
-                .collect(Collectors.toList());
+        return itemService.getAll(userId);
     }
 
     @GetMapping("/search")
@@ -71,4 +71,17 @@ public class ItemController {
         log.info("Deleting item with id : {}", id);
         itemService.delete(id, userId);
     }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto addCommentToItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+                                       @PathVariable Long itemId,
+                                       @RequestBody CommentDto comment) {
+        return itemService.addComment(itemId, comment, userId);
+    }
+
+    @GetMapping("/{itemId}/comments")
+    public List<Comment> getCommentsForItem(@PathVariable Long itemId) {
+        return commentRepository.findByItem_Id(itemId);
+    }
+
 }

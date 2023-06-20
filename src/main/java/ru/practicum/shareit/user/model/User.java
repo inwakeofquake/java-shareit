@@ -1,4 +1,4 @@
-package ru.practicum.shareit.user.dto;
+package ru.practicum.shareit.user.model;
 
 import lombok.*;
 
@@ -11,12 +11,20 @@ import javax.validation.constraints.NotBlank;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Entity
 @Table(name = "users")
-public class UserDto {
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
+
     @NotBlank
+    @Column(name = "name", nullable = false)
     private String name;
+
     @Email
     @NotBlank
+    @Column(name = "email", nullable = false)
     private String email;
 }

@@ -3,17 +3,26 @@ package ru.practicum.shareit.item;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.booking.BookingMapper;
+import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.exception.UnauthorizedAccessException;
+import ru.practicum.shareit.exception.UnsupportedStateException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.user.UserStorageInterface;
+import ru.practicum.shareit.user.UserMapper;
+import ru.practicum.shareit.user.UserRepository;
+import ru.practicum.shareit.user.model.User;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,54 +33,90 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemServiceInterface {
 
     @Autowired
-    private final UserStorageInterface userStorage;
+    private final UserRepository userRepository;
     @Autowired
-    private final ItemStorageInterface itemStorage;
+    private final ItemRepository itemRepository;
+    @Autowired
+    private final BookingRepository bookingRepository;
+    @Autowired
+    private final CommentRepository commentRepository;
 
     @Override
     public Item add(@Valid ItemDto itemDto, Long userId) {
-        User user = userStorage.get(userId);
-        if (user == null) {
-            throw new NoSuchIdException("User not found");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchIdException("User not found"));
+        itemDto.setOwner(UserMapper.toUserDto(user));
         Item item = ItemMapper.toItem(itemDto);
-        item.setOwner(user);
-        itemStorage.add(item);
+        itemRepository.save(item);
         log.info("Item {} successfully added", itemDto.getName());
         return item;
     }
 
     @Override
     public Item update(Long id, ItemDto itemDto, Long userId) {
-        Item item = itemStorage.get(id);
-        if (item == null) {
-            log.warn("Item not found");
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
-        }
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
         if (!item.getOwner().getId().equals(userId)) {
             log.warn("Unauthorized attempt to update item");
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not the owner of the item");
         }
-        item = ItemMapper.toItem(itemDto);
-        item.setOwner(userStorage.get(userId));
-        log.info("Item {} successfully updated", itemDto.getName());
-        return itemStorage.update(id, item);
-    }
-
-    @Override
-    public Item get(Long id) {
-        Item item = itemStorage.get(id);
-        if (item == null) {
-            log.warn("Item not found");
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found");
+        if (itemDto.getName() != null) {
+            item.setName(itemDto.getName());
         }
-        return item;
+        if (itemDto.getDescription() != null) {
+            item.setDescription(itemDto.getDescription());
+        }
+        if (itemDto.getAvailable() != null) {
+            item.setAvailable(itemDto.getAvailable());
+        }
+        log.info("Item {} successfully updated", itemDto.getName());
+        return itemRepository.save(item);
     }
 
     @Override
-    public List<Item> getAll(Long userId) {
-        return itemStorage.values().stream()
-                .filter(item -> item.getOwner().getId().equals(userId))
+    public ItemDto get(Long id, Long userId) {
+
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
+
+        ItemDto itemDto;
+        if (item.getOwner().getId() == userId) {
+            itemDto = setLastNextBookings(item);
+        } else
+            itemDto = ItemMapper.toItemDto(item);
+
+        return addCommentsToItem(itemDto);
+    }
+
+    private ItemDto addCommentsToItem(ItemDto itemDto) {
+        itemDto.setComments(commentRepository.findByItem_Id(itemDto.getId())
+                .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+        return itemDto;
+    }
+
+    private ItemDto setLastNextBookings(Item item) {
+        ItemDto itemDto = ItemMapper.toItemDto(item);
+        itemDto.setLastBooking(BookingMapper.toBookingDto(
+                bookingRepository.findByItemAndStartIsBeforeAndStatus(item,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED,
+                        Sort.by("start").descending()).stream().findFirst().orElse(null)));
+        itemDto.setNextBooking(BookingMapper.toBookingDto(
+                bookingRepository.findByItemAndStartIsAfterAndStatus(item,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED,
+                        Sort.by("start").ascending()).stream().findFirst().orElse(null)));
+        return itemDto;
+    }
+
+    @Override
+    public List<ItemDto> getAll(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchIdException("User not found"));
+        List<Item> items = itemRepository.findByOwner(user, Sort.by("id").ascending());
+        return items.stream()
+                .map(this::setLastNextBookings)
+                .map(this::addCommentsToItem)
                 .collect(Collectors.toList());
     }
 
@@ -80,24 +125,39 @@ public class ItemServiceImpl implements ItemServiceInterface {
         if (text.isEmpty()) {
             return new ArrayList<>();
         }
-        String lowerText = text.toLowerCase();
-        return itemStorage.values().stream()
-                .filter(item -> item.getAvailable()
-                        && (item.getName().toLowerCase().contains(lowerText)
-                        || item.getDescription().toLowerCase().contains(lowerText)))
-                .collect(Collectors.toList());
+        return itemRepository.search(text);
     }
 
     @Override
     public void delete(Long id, Long userId) {
-        Item item = itemStorage.get(id);
-        if (item == null) {
-            throw new NoSuchIdException("Item with id " + id + " not found.");
-        }
-        if (!item.getOwner().getId().equals(userId)) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new NoSuchIdException("Item with id " + id + " not found."));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchIdException("User not found"));
+        if (!item.getOwner().getId().equals(user.getId())) {
             throw new UnauthorizedAccessException("User with id " + userId + " is not allowed to delete this item.");
         }
-        itemStorage.delete(id);
+        itemRepository.delete(item);
+    }
+
+    @Override
+    public CommentDto addComment(Long itemId, CommentDto commentDto, Long userId) {
+        if (commentDto.getText().isBlank()) {
+            throw new UnsupportedStateException("Blank comment not allowed");
+        }
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> new NoSuchIdException("Item not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NoSuchIdException("User not found"));
+        Sort sort = Sort.by(Sort.Direction.DESC, "end");
+        List<Booking> bookings = bookingRepository.findByBooker_IdAndEndIsBefore(userId, LocalDateTime.now(), sort);
+        if (bookings.isEmpty()) {
+            throw new UnsupportedStateException("User has not rented this item or the rental period has not ended yet");
+        }
+        Comment comment = new Comment();
+        comment.setItem(item);
+        comment.setAuthor(user);
+        comment.setText(commentDto.getText());
+        comment.setCreated(LocalDateTime.now());
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
 }
 

@@ -4,10 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.InvalidInputException;
+import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -15,53 +18,53 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class UserServiceImpl implements UserServiceInterface {
 
-    private final UserStorageInterface userStorage;
+    private final UserRepository repository;
 
     @Override
     public UserDto add(UserDto userDto) {
-        if (userStorage.getUserByEmail(userDto.getEmail()) != null) {
-            throw new InvalidInputException("User with email " + userDto.getEmail() + " already exists");
-        }
         User user = UserMapper.toUser(userDto);
-        userStorage.add(user);
+        repository.save(user);
         return UserMapper.toUserDto(user);
     }
 
     @Override
     public UserDto getById(Long id) {
-        User user = userStorage.get(id);
-        if (user == null) {
-            throw new InvalidInputException("User with id " + id + " not found");
-        }
+        User user = repository.findById(id)
+                .orElseThrow(() -> new NoSuchIdException("User with id " + id + " not found"));
         return UserMapper.toUserDto(user);
     }
 
     @Override
     public List<UserDto> getAll() {
-        return userStorage.getAll().stream()
+        return repository.findAll().stream()
                 .map(UserMapper::toUserDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserDto update(Long id, UserDto user) {
-        User sourceUser = userStorage.get(id);
-        if (user == null) {
-            throw new InvalidInputException("User with id " + id + " not found");
+    public UserDto update(Long id, UserDto userDto) {
+        User sourceUser = repository.findById(id)
+                .orElseThrow(() -> new InvalidInputException("User with id " + id + " not found"));
+        Optional<User> userByEmail = repository.findByEmail(userDto.getEmail());
+        if ((userByEmail.isPresent()) && (!Objects.equals(userByEmail.get().getId(), id))) {
+            throw new InvalidInputException("User with email " + userDto.getEmail() + " already exists");
         }
-        User userByEmail = userStorage.getUserByEmail(user.getEmail());
-        if ((userByEmail != null) && (!Objects.equals(userByEmail.getId(), id))) {
-            throw new InvalidInputException("User with email " + user.getEmail() + " already exists");
+        if (userDto.getName() != null) {
+            sourceUser.setName(userDto.getName());
         }
-        userStorage.update(id, UserMapper.toUser(user));
-        User updatedUser = userStorage.get(id);
+        if (userDto.getEmail() != null) {
+            sourceUser.setEmail(userDto.getEmail());
+        }
+        repository.save(sourceUser);
+        User updatedUser = repository.findById(id)
+                .orElseThrow(() -> new InvalidInputException("User with id " + id + " not found"));
         log.info("User with ID {} has been updated and has ID {}", sourceUser, updatedUser);
         return UserMapper.toUserDto(updatedUser);
     }
 
     @Override
     public void delete(Long id) {
-        userStorage.delete(id);
+        repository.deleteById(id);
     }
-
 }
+

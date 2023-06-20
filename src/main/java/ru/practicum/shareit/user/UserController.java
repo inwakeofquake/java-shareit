@@ -37,9 +37,9 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
-    public UserDto update(@PathVariable Long userId, @RequestBody UserDto user) {
-        log.info("Updating user: {}", user);
-        return userService.update(userId, user);
+    public UserDto update(@PathVariable Long userId, @RequestBody UserDto userDto) {
+        log.info("Updating user: {}", userDto);
+        return userService.update(userId, userDto);
     }
 
     @GetMapping
