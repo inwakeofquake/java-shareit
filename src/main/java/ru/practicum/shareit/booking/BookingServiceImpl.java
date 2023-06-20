@@ -48,7 +48,7 @@ public class BookingServiceImpl implements BookingServiceInterface {
         if (bookingDto.getStart().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Booking start date in past");
         }
-        if (userId == item.getOwner().getId()) {
+        if (userId.equals(item.getOwner().getId())) {
             throw new NoSuchIdException("Cannot book own item");
         }
         boolean allow = true;
