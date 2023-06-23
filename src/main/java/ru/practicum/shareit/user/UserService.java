@@ -4,7 +4,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 
 import java.util.List;
 
-public interface UserServiceInterface {
+public interface UserService {
 
     UserDto add(UserDto userDto);
 

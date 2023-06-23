@@ -20,6 +20,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -30,7 +31,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class ItemServiceImpl implements ItemServiceInterface {
+@Transactional
+public class ItemServiceImpl implements ItemService {
 
     @Autowired
     private final UserRepository userRepository;
@@ -70,10 +72,11 @@ public class ItemServiceImpl implements ItemServiceInterface {
             item.setAvailable(itemDto.getAvailable());
         }
         log.info("Item {} successfully updated", itemDto.getName());
-        return itemRepository.save(item);
+        return item;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ItemDto get(Long id, Long userId) {
 
         Item item = itemRepository.findById(id)
@@ -110,6 +113,7 @@ public class ItemServiceImpl implements ItemServiceInterface {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ItemDto> getAll(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchIdException("User not found"));
@@ -121,6 +125,7 @@ public class ItemServiceImpl implements ItemServiceInterface {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Item> search(String text) {
         if (text.isEmpty()) {
             return new ArrayList<>();

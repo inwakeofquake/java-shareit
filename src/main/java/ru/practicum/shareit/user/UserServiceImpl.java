@@ -3,6 +3,7 @@ package ru.practicum.shareit.user;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.InvalidInputException;
 import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.user.dto.UserDto;
@@ -16,7 +17,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class UserServiceImpl implements UserServiceInterface {
+@Transactional
+public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
 
@@ -28,6 +30,7 @@ public class UserServiceImpl implements UserServiceInterface {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDto getById(Long id) {
         User user = repository.findById(id)
                 .orElseThrow(() -> new NoSuchIdException("User with id " + id + " not found"));
@@ -35,6 +38,7 @@ public class UserServiceImpl implements UserServiceInterface {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDto> getAll() {
         return repository.findAll().stream()
                 .map(UserMapper::toUserDto)
@@ -55,7 +59,6 @@ public class UserServiceImpl implements UserServiceInterface {
         if (userDto.getEmail() != null) {
             sourceUser.setEmail(userDto.getEmail());
         }
-        repository.save(sourceUser);
         User updatedUser = repository.findById(id)
                 .orElseThrow(() -> new InvalidInputException("User with id " + id + " not found"));
         log.info("User with ID {} has been updated and has ID {}", sourceUser, updatedUser);

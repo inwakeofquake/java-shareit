@@ -6,8 +6,8 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
-@Getter
-@Setter
+
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -20,11 +20,11 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
     @Email
     @NotBlank
-    @Column(name = "email", nullable = false)
+    @Column(name = "email")
     private String email;
 }

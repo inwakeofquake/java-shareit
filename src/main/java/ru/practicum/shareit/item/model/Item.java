@@ -17,14 +17,19 @@ import javax.validation.constraints.NotNull;
 public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @NotBlank
+    @Column(name = "name")
     private String name;
 
     @NotBlank
+    @Column(name = "description")
     private String description;
 
+    @NotNull
+    @Column(name = "available")
     private Boolean available;
 
     @ManyToOne

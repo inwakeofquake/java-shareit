@@ -15,13 +15,15 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @AllArgsConstructor
-public class BookingServiceImpl implements BookingServiceInterface {
+@Transactional
+public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -36,17 +38,11 @@ public class BookingServiceImpl implements BookingServiceInterface {
         if (!item.getAvailable()) {
             throw new BadRequestException("Item not available");
         }
-        if (bookingDto.getEnd().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Booking end date in past");
-        }
         if (bookingDto.getEnd().isBefore(bookingDto.getStart())) {
             throw new BadRequestException("Booking end date is before start date");
         }
         if (bookingDto.getEnd().equals(bookingDto.getStart())) {
             throw new BadRequestException("Booking end date equals start date");
-        }
-        if (bookingDto.getStart().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("Booking start date in past");
         }
         if (userId.equals(item.getOwner().getId())) {
             throw new NoSuchIdException("Cannot book own item");
@@ -87,10 +83,11 @@ public class BookingServiceImpl implements BookingServiceInterface {
         } else {
             booking.setStatus(BookingStatus.REJECTED);
         }
-        return bookingRepository.save(booking);
+        return booking;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Booking get(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
@@ -102,15 +99,18 @@ public class BookingServiceImpl implements BookingServiceInterface {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Booking> getUserBookings(String stateString, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchIdException("User not found"));
+
         BookingRequestState state;
         try {
             state = BookingRequestState.valueOf(stateString);
         } catch (Exception e) {
             throw new UnsupportedStateException("Unknown state: " + stateString);
         }
+
         List<Booking> bookings;
         switch (state) {
             case ALL:
@@ -144,15 +144,18 @@ public class BookingServiceImpl implements BookingServiceInterface {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Booking> getOwnerBookings(String stateString, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchIdException("User not found"));
+
         BookingRequestState state;
         try {
             state = BookingRequestState.valueOf(stateString);
         } catch (Exception e) {
             throw new UnsupportedStateException("Unknown state: " + stateString);
         }
+
         List<Booking> bookings;
         switch (state) {
             case ALL:

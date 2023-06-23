@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserController {
 
-    private final UserServiceInterface userService;
+    private final UserService userService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

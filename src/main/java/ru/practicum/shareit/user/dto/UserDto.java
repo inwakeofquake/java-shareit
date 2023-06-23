@@ -6,12 +6,11 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Table(name = "users")
+@Data
 public class UserDto {
     private Long id;
     @NotBlank

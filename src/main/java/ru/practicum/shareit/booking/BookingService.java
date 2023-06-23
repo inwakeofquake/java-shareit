@@ -5,7 +5,7 @@ import ru.practicum.shareit.booking.model.Booking;
 
 import java.util.List;
 
-public interface BookingServiceInterface {
+public interface BookingService {
     Booking create(BookingDto bookingDto, Long userId);
 
     Booking approveOrReject(Long bookingId, boolean approved, Long userId);

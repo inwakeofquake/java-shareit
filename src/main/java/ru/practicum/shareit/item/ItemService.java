@@ -7,7 +7,7 @@ import ru.practicum.shareit.item.model.Item;
 import javax.validation.Valid;
 import java.util.List;
 
-public interface ItemServiceInterface {
+public interface ItemService {
     Item add(@Valid ItemDto itemDto, Long userId);
 
     Item update(Long id, ItemDto itemDto, Long userId);
