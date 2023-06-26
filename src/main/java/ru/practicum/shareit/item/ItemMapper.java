@@ -12,6 +12,7 @@ public class ItemMapper {
         return ItemDto.builder()
                 .id(item.getId())
                 .name(item.getName())
+                .owner(UserMapper.toUserDto(item.getOwner()))
                 .description(item.getDescription())
                 .available(item.getAvailable())
                 .request(item.getRequest())
@@ -32,4 +33,3 @@ public class ItemMapper {
         return item;
     }
 }
-

@@ -35,6 +35,16 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    public ResponseEntity<Map<String, String>> handleUnsupportedState(final UnsupportedStateException e) {
+        log.error("Unsupported state error. Response code: {}", HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(
+                Map.of(
+                        "error", e.getMessage()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler
     public ResponseEntity<Map<String, String>> invalidInput(final InvalidInputException e) {
         log.error("Invalid input error occurred. Response code: {}", HttpStatus.CONFLICT.value());
         return new ResponseEntity<>(
