@@ -13,6 +13,8 @@ import java.util.List;
 public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findByOwner(User owner, Sort sort);
 
+    Item findByName(String name);
+
     @Query("select i from Item i " +
             "where i.available=true AND (upper(i.name) like upper(concat('%', ?1, '%')) " +
             " or upper(i.description) like upper(concat('%', ?1, '%')))")

@@ -5,6 +5,7 @@ import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import javax.validation.constraints.Future;
+import javax.validation.constraints.FutureOrPresent;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -18,7 +19,7 @@ public class BookingDto {
     @Future
     private LocalDateTime start;
     @NotNull
-    @Future
+    @FutureOrPresent
     private LocalDateTime end;
     private ItemDto item;
     @NotNull

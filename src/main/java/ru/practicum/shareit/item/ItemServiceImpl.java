@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.BookingRepository;
@@ -16,11 +17,13 @@ import ru.practicum.shareit.exception.UnauthorizedAccessException;
 import ru.practicum.shareit.exception.UnsupportedStateException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -43,12 +46,20 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private final CommentRepository commentRepository;
 
+    @Autowired
+    private final ItemRequestRepository itemRequestRepository;
+
     @Override
     public Item add(@Valid ItemDto itemDto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchIdException("User not found"));
         itemDto.setOwner(UserMapper.toUserDto(user));
         Item item = ItemMapper.toItem(itemDto);
+        if (itemDto.getRequestId() != null) {
+            ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NoSuchIdException("Item request not found"));
+            item.setRequest(itemRequest);
+        }
         itemRepository.save(item);
         log.info("Item {} successfully added", itemDto.getName());
         return item;
@@ -101,14 +112,16 @@ public class ItemServiceImpl implements ItemService {
         ItemDto itemDto = ItemMapper.toItemDto(item);
         itemDto.setLastBooking(BookingMapper.toBookingDto(
                 bookingRepository.findByItemAndStartIsBeforeAndStatus(item,
-                        LocalDateTime.now(),
-                        BookingStatus.APPROVED,
-                        Sort.by("start").descending()).stream().findFirst().orElse(null)));
+                                LocalDateTime.now(),
+                                BookingStatus.APPROVED,
+                                Sort.by("start").descending())
+                        .stream().findFirst().orElse(null)));
         itemDto.setNextBooking(BookingMapper.toBookingDto(
                 bookingRepository.findByItemAndStartIsAfterAndStatus(item,
-                        LocalDateTime.now(),
-                        BookingStatus.APPROVED,
-                        Sort.by("start").ascending()).stream().findFirst().orElse(null)));
+                                LocalDateTime.now(),
+                                BookingStatus.APPROVED,
+                                Sort.by("start").ascending())
+                        .stream().findFirst().orElse(null)));
         return itemDto;
     }
 

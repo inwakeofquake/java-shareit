@@ -2,10 +2,13 @@ package ru.practicum.shareit.booking;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.exception.BadRequestException;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -46,18 +49,28 @@ public class BookingController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<Booking> getUserBookings(
+            @RequestParam(value = "from", defaultValue = "0") int from,
+            @RequestParam(value = "size", defaultValue = "1000") int size,
             @RequestParam(value = "state", defaultValue = "ALL") String state,
             @RequestHeader(header) Long userId) {
+        if ((from<0) || (size == 0)) {
+            throw new BadRequestException("Bad page params");
+        }
         log.info("Getting user bookings with state: {} for user ID: {}", state, userId);
-        return bookingService.getUserBookings(state, userId);
+        return bookingService.getUserBookings(state, userId, PageRequest.of(from/size, size, Sort.by("start").descending()));
     }
 
     @GetMapping("/owner")
     @ResponseStatus(HttpStatus.OK)
     public List<Booking> getOwnerBookings(
+            @RequestParam(value = "from", defaultValue = "0") int from,
+            @RequestParam(value = "size", defaultValue = "1000") int size,
             @RequestParam(value = "state", defaultValue = "ALL") String state,
             @RequestHeader(header) Long userId) {
+        if ((from<0) || (size == 0)) {
+            throw new BadRequestException("Bad page params");
+        }
         log.info("Getting owner bookings with state: {} for user ID: {}", state, userId);
-        return bookingService.getOwnerBookings(state, userId);
+        return bookingService.getOwnerBookings(state, userId, PageRequest.of(from/size, size,Sort.by("start").descending()));
     }
 }
