@@ -11,6 +11,7 @@ import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,7 +47,7 @@ public class ItemRequestService {
         }
         return itemRequestRepository.findAllByOrderByCreatedDesc(pageable)
                 .stream()
-                .filter((ir) -> ir.getRequestor().getId() != userId)
+                .filter(ir -> !Objects.equals(ir.getRequestor().getId(), userId))
                 .map(ItemRequestMapper::toItemRequestDto)
                 .collect(Collectors.toList());
     }
