@@ -307,8 +307,8 @@ class BookingServiceImplTest {
 
     @Test
     void create_EndDateEqualsStartDate_ThrowsException() {
-        LocalDateTime start = LocalDateTime.now().plusDays(2L);
-        LocalDateTime end = LocalDateTime.now().plusDays(2L);
+        LocalDateTime start = LocalDateTime.of(2023, 5, 5, 10, 10);
+        LocalDateTime end = LocalDateTime.of(2023, 5, 5, 10, 10);
 
         bookingDto.setStart(start);
         bookingDto.setEnd(end);
