@@ -156,7 +156,7 @@ class ItemRequestControllerTest {
     void testCreateInvalidRequest() throws Exception {
 
         ItemRequestDto invalidRequestDto = new ItemRequestDto();
-        invalidRequestDto.setDescription(""); // invalid data
+        invalidRequestDto.setDescription("");
 
         when(mockItemRequestService.createRequest(any(ItemRequestDto.class),
                 anyLong())).thenThrow(new InvalidInputException("Invalid input"));

@@ -1,7 +1,9 @@
 package ru.practicum.shareit.booking;
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,7 +102,16 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Booking> getUserBookings(String stateString, Long userId, Pageable pageable) {
+    public List<Booking> getUserBookings(String stateString, Long userId, Integer from, Integer size) {
+        Pageable pageable;
+        if ((from == null) || (size == null)) {
+            pageable = Pageable.unpaged();
+        } else {
+            if ((from < 0) || (size == 0)) {
+                throw new BadRequestException("Bad page params");
+            }
+            pageable = PageRequest.of(from / size, size, Sort.by("start").descending());
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchIdException("User not found"));
 

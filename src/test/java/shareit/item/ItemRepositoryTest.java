@@ -25,7 +25,6 @@ class ItemRepositoryTest {
     @Autowired
     private ItemRepository itemRepository;
 
-
     @Test
     void findByOwner() {
         User owner = User.builder()
@@ -45,7 +44,7 @@ class ItemRepositoryTest {
         item = itemRepository.save(item);
 
         List<Item> items = itemRepository.findByOwner(owner, Sort.unsorted());
-        Assertions.assertTrue(!items.isEmpty());
+        Assertions.assertFalse(items.isEmpty());
         Assertions.assertEquals(items.get(0).getOwner(), owner);
     }
 

@@ -53,11 +53,8 @@ public class BookingController {
             @RequestParam(value = "size", defaultValue = "1000") int size,
             @RequestParam(value = "state", defaultValue = "ALL") String state,
             @RequestHeader(header) Long userId) {
-        if ((from < 0) || (size == 0)) {
-            throw new BadRequestException("Bad page params");
-        }
         log.info("Getting user bookings with state: {} for user ID: {}", state, userId);
-        return bookingService.getUserBookings(state, userId, PageRequest.of(from / size, size, Sort.by("start").descending()));
+        return bookingService.getUserBookings(state, userId, from, size);
     }
 
     @GetMapping("/owner")

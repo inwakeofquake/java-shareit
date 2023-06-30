@@ -17,6 +17,8 @@ import ru.practicum.shareit.booking.BookingController;
 import ru.practicum.shareit.booking.BookingService;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.exception.BadRequestException;
+import ru.practicum.shareit.exception.UnsupportedStateException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -110,7 +112,7 @@ class BookingControllerTest {
 
     @Test
     void getUserBookings() throws Exception {
-        when(bookingService.getUserBookings("ALL", 1L, PageRequest.of(0, 1000, Sort.by("start").descending())))
+        when(bookingService.getUserBookings("ALL", 1L, 0, 1000))
                 .thenReturn(List.of(booking));
 
         mvc.perform(get("/bookings/")
@@ -120,6 +122,34 @@ class BookingControllerTest {
                         .param("state", "ALL")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void getUserBookingsBadRequest() throws Exception {
+        when(bookingService.getUserBookings("ALL", 1L, -1, 0))
+                .thenThrow(new BadRequestException("Invalid page params"));
+
+        mvc.perform(get("/bookings/")
+                        .header("X-Sharer-User-Id", 1L)
+                        .param("from", "-1")
+                        .param("size", "0")
+                        .param("state", "ALL")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getUserBookingsUnsupportedState() throws Exception {
+        when(bookingService.getUserBookings("SOMES", 1L, 0, 10))
+                .thenThrow(new UnsupportedStateException("Invalid state"));
+
+        mvc.perform(get("/bookings/")
+                        .header("X-Sharer-User-Id", 1L)
+                        .param("from", "0")
+                        .param("size", "10")
+                        .param("state", "SOMES")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

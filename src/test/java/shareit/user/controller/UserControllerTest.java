@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.ShareItApp;
+import ru.practicum.shareit.exception.InvalidInputException;
 import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.user.UserController;
 import ru.practicum.shareit.user.UserService;
@@ -103,7 +104,6 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-
     @Test
     void update() throws Exception {
         when(mockUserService.update(1L, userDtoUpdateTest))
@@ -133,6 +133,18 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void update_UserDoesNotExist_ThrowsInvalidInputException() throws Exception {
+        when(mockUserService.update(1L, userDtoUpdateTest))
+                .thenThrow(new InvalidInputException("User not found"));
+
+        mvc.perform(patch("/users/1")
+                        .content(mapper.writeValueAsString(userDtoUpdateTest))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
+    }
 
     @Test
     void getUserDto() throws Exception {
@@ -156,7 +168,6 @@ class UserControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
-
 
     @Test
     void deleteUserDto() throws Exception {
