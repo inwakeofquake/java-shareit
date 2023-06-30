@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ItemController {
 
+    private static final String header = "X-Sharer-User-Id";
     private final ItemService itemService;
     private final CommentRepository commentRepository;
-    private static final String header = "X-Sharer-User-Id";
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

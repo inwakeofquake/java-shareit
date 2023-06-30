@@ -13,8 +13,8 @@ import java.util.List;
 @RequestMapping(path = "/requests")
 @AllArgsConstructor
 public class ItemRequestController {
+    private static final String header = "X-Sharer-User-Id";
     private final ItemRequestService itemRequestService;
-    private final static String header = "X-Sharer-User-Id";
 
     @PostMapping
     public ItemRequestDto createRequest(@RequestBody @Valid ItemRequestDto itemRequestDto,
