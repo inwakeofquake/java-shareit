@@ -39,7 +39,7 @@ public class ItemRequestService {
                 .stream().map(ItemRequestMapper::toItemRequestDto)
                 .collect(Collectors.toList());
     }
-
+//комментарий ради комита :(
     public List<ItemRequestDto> getAllRequests(Long userId,
                                                Pageable pageable) {
         if (!userRepository.findById(userId).isPresent()) {
