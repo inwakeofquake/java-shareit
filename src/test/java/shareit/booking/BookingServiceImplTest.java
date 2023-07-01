@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.BookingRequestState;
 import ru.practicum.shareit.booking.BookingServiceImpl;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -47,6 +48,8 @@ class BookingServiceImplTest {
 
     @Mock
     private ItemRepository itemRepository;
+
+    private Booking pastBooking, futureBooking, currentBooking;
 
     private BookingDto bookingDto;
 
@@ -87,6 +90,52 @@ class BookingServiceImplTest {
 
         booking = Booking.builder()
                 .id(1L)
+                .start(start)
+                .end(end)
+                .item(item)
+                .booker(user)
+                .status(BookingStatus.WAITING)
+                .build();
+
+        pastBooking = createPastBooking();
+        futureBooking = createFutureBooking();
+        currentBooking = createCurrentBooking();
+    }
+
+    private Booking createPastBooking() {
+        LocalDateTime start = LocalDateTime.now().minusDays(2);
+        LocalDateTime end = LocalDateTime.now().minusDays(1);
+
+        return Booking.builder()
+                .id(4L)
+                .start(start)
+                .end(end)
+                .item(item)
+                .booker(user)
+                .status(BookingStatus.WAITING)
+                .build();
+    }
+
+    private Booking createFutureBooking() {
+        LocalDateTime start = LocalDateTime.now().plusDays(2);
+        LocalDateTime end = LocalDateTime.now().plusDays(3);
+
+        return Booking.builder()
+                .id(5L)
+                .start(start)
+                .end(end)
+                .item(item)
+                .booker(user)
+                .status(BookingStatus.WAITING)
+                .build();
+    }
+
+    private Booking createCurrentBooking() {
+        LocalDateTime start = LocalDateTime.now().minusDays(1);
+        LocalDateTime end = LocalDateTime.now().plusDays(1);
+
+        return Booking.builder()
+                .id(6L)
                 .start(start)
                 .end(end)
                 .item(item)
@@ -378,7 +427,7 @@ class BookingServiceImplTest {
         Integer from = 0;
         Integer size = 5;
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user)); // Assuming userId is a valid user ID
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         assertThrows(UnsupportedStateException.class, () -> {
             bookingService.getUserBookings(invalidStateString, userId, from, size);
@@ -425,10 +474,139 @@ class BookingServiceImplTest {
         String invalidStateString = "INVALID_STATE";
         Pageable pageable = PageRequest.of(0, 5);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user)); // Assuming userId is a valid user ID
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         assertThrows(UnsupportedStateException.class, () -> {
             bookingService.getOwnerBookings(invalidStateString, userId, pageable);
         });
+    }
+
+    @Test
+    void getUserBookings_PastBookings_ReturnsPastBookings() {
+        Booking pastBooking = createPastBooking();
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
+        when(bookingRepository.findByBookerAndEndIsBefore(eq(user), any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(pastBooking)));
+
+        List<Booking> bookings = bookingService.getUserBookings(BookingRequestState.PAST.name(),
+                user.getId(), 0, 10);
+
+        assertTrue(bookings.contains(pastBooking));
+    }
+
+    @Test
+    void getUserBookings_FutureBookings_ReturnsFutureBookings() {
+        Booking futureBooking = createFutureBooking();
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
+        when(bookingRepository.findByBookerAndStartIsAfter(eq(user), any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(futureBooking)));
+
+        List<Booking> bookings = bookingService.getUserBookings(BookingRequestState.FUTURE.name(),
+                user.getId(), 0, 10);
+
+        assertTrue(bookings.contains(futureBooking));
+    }
+
+    @Test
+    void getUserBookings_CurrentBookings_ReturnsCurrentBookings() {
+        Booking currentBooking = createCurrentBooking();
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
+        when(bookingRepository.findByBookerAndStartIsBeforeAndEndIsAfter(eq(user),
+                any(LocalDateTime.class), any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(currentBooking)));
+
+        List<Booking> bookings = bookingService.getUserBookings(BookingRequestState
+                .CURRENT.name(), user.getId(), 0, 10);
+
+        assertTrue(bookings.contains(currentBooking));
+    }
+
+    @Test
+    void getOwnerBookings_All_ReturnsBookings() {
+        Pageable pageable = Pageable.unpaged();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByItemOwner(user, pageable)).thenReturn(new PageImpl<>(List.of(booking, pastBooking,
+                futureBooking, currentBooking)));
+
+        List<Booking> result = bookingService.getOwnerBookings("ALL", userId, pageable);
+
+        assertEquals(4, result.size());
+    }
+
+    @Test
+    void getOwnerBookings_Past_ReturnsPastBookings() {
+        Pageable pageable = Pageable.unpaged();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByItemOwnerAndEndIsBefore(eq(user), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(pastBooking)));
+
+        List<Booking> result = bookingService.getOwnerBookings("PAST", userId, pageable);
+
+        assertEquals(1, result.size());
+        assertTrue(result.contains(pastBooking));
+    }
+
+    @Test
+    void getOwnerBookings_Current_ReturnsCurrentBookings() {
+        Pageable pageable = Pageable.unpaged();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByItemOwnerAndStartIsBeforeAndEndIsAfter(eq(user), any(LocalDateTime.class),
+                any(LocalDateTime.class), eq(pageable))).thenReturn(new PageImpl<>(List.of(currentBooking)));
+
+        List<Booking> result = bookingService.getOwnerBookings("CURRENT", userId, pageable);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getOwnerBookings_Waiting_ReturnsWaitingBookings() {
+        Pageable pageable = Pageable.unpaged();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByItemOwnerAndStatus(user, BookingStatus.WAITING, pageable))
+                .thenReturn(new PageImpl<>(List.of(booking)));
+
+        List<Booking> result = bookingService.getOwnerBookings("WAITING", userId, pageable);
+
+        assertEquals(1, result.size());
+        assertTrue(result.contains(booking));
+    }
+
+    @Test
+    void getOwnerBookings_Rejected_ReturnsRejectedBookings() {
+        Pageable pageable = Pageable.unpaged();
+        Booking rejectedBooking = Booking.builder()
+                .id(7L)
+                .start(booking.getStart())
+                .end(booking.getEnd())
+                .item(item)
+                .booker(user)
+                .status(BookingStatus.REJECTED)
+                .build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByItemOwnerAndStatus(user, BookingStatus.REJECTED, pageable))
+                .thenReturn(new PageImpl<>(List.of(rejectedBooking)));
+
+        List<Booking> result = bookingService.getOwnerBookings("REJECTED", userId, pageable);
+
+        assertEquals(1, result.size());
+        assertTrue(result.contains(rejectedBooking));
+    }
+
+    @Test
+    void getOwnerBookings_InvalidState_ThrowsException() {
+        Pageable pageable = Pageable.unpaged();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThrows(UnsupportedStateException.class, () -> bookingService
+                .getOwnerBookings("INVALID", userId, pageable));
+    }
+
+    @Test
+    void getOwnerBookings_NullState_ThrowsException() {
+        Pageable pageable = Pageable.unpaged();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThrows(UnsupportedStateException.class, () -> bookingService
+                .getOwnerBookings(null, userId, pageable));
     }
 }

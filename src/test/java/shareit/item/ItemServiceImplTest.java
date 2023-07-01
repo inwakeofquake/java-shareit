@@ -21,6 +21,8 @@ import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
@@ -31,6 +33,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,6 +54,9 @@ public class ItemServiceImplTest {
     @Mock
     private CommentRepository commentRepository;
 
+    @Mock
+    private ItemRequestRepository itemRequestRepository;
+
     private User user;
 
     @BeforeEach
@@ -69,6 +75,11 @@ public class ItemServiceImplTest {
         itemDto.setName("Test Item");
         itemDto.setDescription("Test Description");
         itemDto.setAvailable(true);
+        itemDto.setRequestId(123L);
+
+        ItemRequest itemRequest = new ItemRequest();
+        itemRequest.setId(123L);
+        when(itemRequestRepository.findById(123L)).thenReturn(Optional.of(itemRequest));
 
         Item item = ItemMapper.toItem(itemDto);
         item.setOwner(user);
@@ -80,6 +91,23 @@ public class ItemServiceImplTest {
         assertEquals("Test Description", result.getDescription());
         assertEquals(true, result.getAvailable());
         assertEquals(user, result.getOwner());
+        assertEquals(itemRequest, result.getRequest());
+
+    }
+
+    @Test
+    void add_ItemDtoAndUserIdAndInvalidRequestId_ThrowsNoSuchIdException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        ItemDto itemDto = new ItemDto();
+        itemDto.setName("Test Item");
+        itemDto.setDescription("Test Description");
+        itemDto.setAvailable(true);
+        itemDto.setRequestId(123L);
+
+        when(itemRequestRepository.findById(123L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchIdException.class, () -> itemService.add(itemDto, 1L));
     }
 
     @Test
@@ -315,4 +343,34 @@ public class ItemServiceImplTest {
             itemService.addComment(1L, commentDto, 1L);
         });
     }
+
+    @Test
+    void addComment_UserHasNoBookings_ThrowsUnsupportedStateException() {
+
+        Long itemId = 1L;
+        Long userId = 1L;
+
+        CommentDto commentDto = new CommentDto();
+        commentDto.setText("Comment");
+
+        User user = new User();
+        user.setId(userId);
+
+        Item item = new Item();
+        item.setId(itemId);
+        item.setOwner(user);
+
+        List<Booking> bookings = new ArrayList<>();
+
+        when(itemRepository.findById(itemId)).thenReturn(Optional.of(item));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByBooker_IdAndEndIsBefore(eq(userId), any(LocalDateTime.class),
+                eq(Sort.by(Sort.Direction.DESC, "end")))).thenReturn(bookings);
+
+        assertThrows(UnsupportedStateException.class, () -> {
+            itemService.addComment(itemId, commentDto, userId);
+        });
+    }
+
+
 }
