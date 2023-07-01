@@ -18,7 +18,7 @@ public class ItemRequestMapper {
                 .build();
     }
 
-    public static ItemRequest toItemRequestDto(ItemRequestDto itemRequestDto) {
+    public static ItemRequest toItemRequest(ItemRequestDto itemRequestDto) {
         if (itemRequestDto == null) {
             return null;
         }

@@ -168,6 +168,20 @@ class ItemRequestControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void testGetAllRequestsWithBadParams() throws Exception {
+
+        mockMvc.perform(get("/requests/all?from=-1")
+                        .header("X-Sharer-User-Id", "1"))
+                .andExpect(status().isBadRequest());
+
+
+        mockMvc.perform(get("/requests/all?size=0")
+                        .header("X-Sharer-User-Id", "1"))
+                .andExpect(status().isBadRequest());
+    }
+
+
 }
 
 
