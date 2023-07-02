@@ -11,11 +11,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.ShareItApp;
-import ru.practicum.shareit.exception.InvalidInputException;
-import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.user.UserController;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.utility.InvalidInputException;
+import ru.practicum.shareit.utility.NoSuchIdException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -93,7 +93,7 @@ class UserControllerTest {
     }
 
     @Test
-    void create_InvalidInput_ThrowsException() throws Exception {
+    void createInvalidInputThrowsException() throws Exception {
         UserDto invalidUserDto = UserDto.builder().build();
 
         mvc.perform(post("/users")
@@ -121,7 +121,7 @@ class UserControllerTest {
     }
 
     @Test
-    void update_UserDoesNotExist_ThrowsException() throws Exception {
+    void updateUserDoesNotExistThrowsException() throws Exception {
         when(mockUserService.update(1L, userDtoUpdateTest))
                 .thenThrow(new NoSuchIdException("User not found"));
 
@@ -134,7 +134,7 @@ class UserControllerTest {
     }
 
     @Test
-    void update_UserDoesNotExist_ThrowsInvalidInputException() throws Exception {
+    void updateUserDoesNotExistThrowsInvalidInputException() throws Exception {
         when(mockUserService.update(1L, userDtoUpdateTest))
                 .thenThrow(new InvalidInputException("User not found"));
 
@@ -160,7 +160,7 @@ class UserControllerTest {
     }
 
     @Test
-    void getUserDto_UserDoesNotExist_ThrowsException() throws Exception {
+    void getUserDtoUserDoesNotExistThrowsException() throws Exception {
         when(mockUserService.getById(1L))
                 .thenThrow(new NoSuchIdException("User not found"));
 
@@ -178,7 +178,7 @@ class UserControllerTest {
     }
 
     @Test
-    void deleteUserDto_UserDoesNotExist_ThrowsException() throws Exception {
+    void deleteUserDtoUserDoesNotExistThrowsException() throws Exception {
         doThrow(new NoSuchIdException("User not found"))
                 .when(mockUserService).delete(1L);
 

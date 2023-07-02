@@ -4,6 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.model.Item;
@@ -38,9 +40,22 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByItem(Item item);
 
-    List<Booking> findByBooker_IdAndEndIsBefore(Long bookerId, LocalDateTime end, Sort sort);
+    List<Booking> findByBookerIdAndEndIsBefore(Long bookerId, LocalDateTime end, Sort sort);
 
-    List<Booking> findByItemAndStartIsBeforeAndStatus(Item item, LocalDateTime now, BookingStatus status, Sort sort);
+//    List<Booking> findByItemAndStartIsBeforeAndStatus(Item item, LocalDateTime now, BookingStatus status, Sort sort);
+//
+//    List<Booking> findByItemAndStartIsAfterAndStatus(Item item, LocalDateTime now, BookingStatus status, Sort sort);
 
-    List<Booking> findByItemAndStartIsAfterAndStatus(Item item, LocalDateTime now, BookingStatus status, Sort sort);
+    @Query("SELECT b FROM Booking b WHERE b.item = :item " +
+            "AND b.start < :now AND b.status = :status ORDER BY b.start DESC")
+    Page<Booking> findLastBooking(@Param("item") Item item,
+                                  @Param("now") LocalDateTime now,
+                                  @Param("status") BookingStatus status, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.item = :item AND b.start > :now " +
+            "AND b.status = :status ORDER BY b.start ASC")
+    Page<Booking> findNextBooking(@Param("item") Item item,
+                                  @Param("now") LocalDateTime now,
+                                  @Param("status") BookingStatus status, Pageable pageable);
+
 }

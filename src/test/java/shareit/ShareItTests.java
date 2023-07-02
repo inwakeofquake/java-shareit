@@ -9,8 +9,8 @@ import ru.practicum.shareit.ShareItApp;
 @ContextConfiguration(classes = ShareItApp.class)
 class ShareItTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }

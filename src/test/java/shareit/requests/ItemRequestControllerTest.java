@@ -12,12 +12,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.ShareItApp;
-import ru.practicum.shareit.exception.InvalidInputException;
-import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.request.ItemRequestController;
-import ru.practicum.shareit.request.ItemRequestService;
+import ru.practicum.shareit.request.ItemRequestServiceImpl;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.InvalidInputException;
+import ru.practicum.shareit.utility.NoSuchIdException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.practicum.shareit.utility.Constants.HEADER_USER_ID;
 
 @WebMvcTest(ItemRequestController.class)
 @ContextConfiguration(classes = ShareItApp.class)
@@ -46,7 +47,7 @@ class ItemRequestControllerTest {
     ObjectMapper objectMapper;
 
     @MockBean
-    ItemRequestService mockItemRequestService;
+    ItemRequestServiceImpl mockItemRequestServiceImpl;
 
     private User user;
     private ItemRequestDto requestDto;
@@ -82,11 +83,11 @@ class ItemRequestControllerTest {
     @Test
     void testCreateRequest() throws Exception {
 
-        when(mockItemRequestService.createRequest(any(ItemRequestDto.class),
+        when(mockItemRequestServiceImpl.createRequest(any(ItemRequestDto.class),
                 anyLong())).thenReturn(requestDto);
 
         mockMvc.perform(post("/requests")
-                        .header("X-Sharer-User-Id", "1")
+                        .header(HEADER_USER_ID, "1")
                         .content(objectMapper.writeValueAsString(requestDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -97,10 +98,10 @@ class ItemRequestControllerTest {
     @Test
     void testGetOwnRequests() throws Exception {
 
-        when(mockItemRequestService.getOwnRequests(anyLong())).thenReturn(requests);
+        when(mockItemRequestServiceImpl.getOwnRequests(anyLong())).thenReturn(requests);
 
         mockMvc.perform(get("/requests")
-                        .header("X-Sharer-User-Id", "1"))
+                        .header(HEADER_USER_ID, "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(requests.size())))
                 .andExpect(jsonPath("$[0].user.id", is(user.getId().intValue())));
@@ -109,10 +110,10 @@ class ItemRequestControllerTest {
     @Test
     void testGetAllRequests() throws Exception {
 
-        when(mockItemRequestService.getAllRequests(anyLong(), any(PageRequest.class))).thenReturn(requests);
+        when(mockItemRequestServiceImpl.getAllRequests(anyLong(), any(PageRequest.class))).thenReturn(requests);
 
         mockMvc.perform(get("/requests/all")
-                        .header("X-Sharer-User-Id", "1"))
+                        .header(HEADER_USER_ID, "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(requests.size())))
                 .andExpect(jsonPath("$[0].user.id", is(user.getId().intValue())));
@@ -121,10 +122,10 @@ class ItemRequestControllerTest {
     @Test
     void testGetRequest() throws Exception {
 
-        when(mockItemRequestService.getRequest(anyLong(), anyLong())).thenReturn(requestDto);
+        when(mockItemRequestServiceImpl.getRequest(anyLong(), anyLong())).thenReturn(requestDto);
 
         mockMvc.perform(get("/requests/1")
-                        .header("X-Sharer-User-Id", "1"))
+                        .header(HEADER_USER_ID, "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.description", is(requestDto.getDescription())))
                 .andExpect(jsonPath("$.user.id", is(user.getId().intValue())));
@@ -133,10 +134,10 @@ class ItemRequestControllerTest {
     @Test
     void testUserNotFound() throws Exception {
 
-        when(mockItemRequestService.getOwnRequests(anyLong())).thenThrow(new NoSuchIdException("No such ID"));
+        when(mockItemRequestServiceImpl.getOwnRequests(anyLong())).thenThrow(new NoSuchIdException("No such ID"));
 
         mockMvc.perform(get("/requests")
-                        .header("X-Sharer-User-Id", "99")) // Nonexistent User ID
+                        .header(HEADER_USER_ID, "99")) // Nonexistent User ID
                 .andExpect(status().isNotFound());
     }
 
@@ -144,10 +145,10 @@ class ItemRequestControllerTest {
     void testEmptyList() throws Exception {
 
         List<ItemRequestDto> emptyList = new ArrayList<>();
-        when(mockItemRequestService.getOwnRequests(anyLong())).thenReturn(emptyList);
+        when(mockItemRequestServiceImpl.getOwnRequests(anyLong())).thenReturn(emptyList);
 
         mockMvc.perform(get("/requests")
-                        .header("X-Sharer-User-Id", "1"))
+                        .header(HEADER_USER_ID, "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
@@ -158,11 +159,11 @@ class ItemRequestControllerTest {
         ItemRequestDto invalidRequestDto = new ItemRequestDto();
         invalidRequestDto.setDescription("");
 
-        when(mockItemRequestService.createRequest(any(ItemRequestDto.class),
+        when(mockItemRequestServiceImpl.createRequest(any(ItemRequestDto.class),
                 anyLong())).thenThrow(new InvalidInputException("Invalid input"));
 
         mockMvc.perform(post("/requests")
-                        .header("X-Sharer-User-Id", "1")
+                        .header(HEADER_USER_ID, "1")
                         .content(objectMapper.writeValueAsString(invalidRequestDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
@@ -172,15 +173,13 @@ class ItemRequestControllerTest {
     void testGetAllRequestsWithBadParams() throws Exception {
 
         mockMvc.perform(get("/requests/all?from=-1")
-                        .header("X-Sharer-User-Id", "1"))
+                        .header(HEADER_USER_ID, "1"))
                 .andExpect(status().isBadRequest());
-
 
         mockMvc.perform(get("/requests/all?size=0")
-                        .header("X-Sharer-User-Id", "1"))
+                        .header(HEADER_USER_ID, "1"))
                 .andExpect(status().isBadRequest());
     }
-
 
 }
 

@@ -1,5 +1,6 @@
 package shareit.requests;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -11,27 +12,32 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-
 class ItemRequestMapperTest {
 
-    @Test
-    void toItemRequestDto_ReturnsExpectedDto() {
+    private ItemRequest itemRequest;
+    private ItemRequestDto itemRequestDto;
 
+    @BeforeEach
+    void setUp() {
         UserDto userDto = new UserDto(1L, "Test User", "testuser@email.com");
         ItemDto itemDto = new ItemDto(1L, "item1", "description", true,
                 userDto, null, null, null, null);
         List<ItemDto> itemDtos = List.of(itemDto);
-        ItemRequest itemRequest = new ItemRequest(1L, "description",
+        itemRequest = new ItemRequest(1L, "description",
                 new User(1L, "Test User", "testuser@email.com"), LocalDateTime.now(),
                 itemDtos.stream().map(ItemMapper::toItem).collect(Collectors.toList()));
+        itemRequestDto = new ItemRequestDto(1L, "description",
+                UserMapper.toUser(userDto), LocalDateTime.now(), itemDtos);
+    }
 
+    @Test
+    void toItemRequestDtoReturnsExpectedDto() {
         ItemRequestDto result = ItemRequestMapper.toItemRequestDto(itemRequest);
 
         assertNotNull(result);
@@ -43,15 +49,7 @@ class ItemRequestMapperTest {
     }
 
     @Test
-    void toItemRequest_ReturnsExpectedRequest() {
-
-        UserDto userDto = new UserDto(1L, "Test User", "testuser@email.com");
-        ItemDto itemDto = new ItemDto(1L, "item1", "description", true,
-                userDto, null, null, null, null);
-        List<ItemDto> itemDtos = Arrays.asList(itemDto);
-        ItemRequestDto itemRequestDto = new ItemRequestDto(1L, "description",
-                UserMapper.toUser(userDto), LocalDateTime.now(), itemDtos);
-
+    void toItemRequestReturnsExpectedRequest() {
         ItemRequest result = ItemRequestMapper.toItemRequest(itemRequestDto);
 
         assertNotNull(result);

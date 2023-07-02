@@ -3,6 +3,7 @@ package ru.practicum.shareit.item;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -12,9 +13,6 @@ import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.exception.NoSuchIdException;
-import ru.practicum.shareit.exception.UnauthorizedAccessException;
-import ru.practicum.shareit.exception.UnsupportedStateException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
@@ -24,6 +22,9 @@ import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.NoSuchIdException;
+import ru.practicum.shareit.utility.UnauthorizedAccessException;
+import ru.practicum.shareit.utility.UnsupportedStateException;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -104,24 +105,27 @@ public class ItemServiceImpl implements ItemService {
 
     private ItemDto addCommentsToItem(ItemDto itemDto) {
         itemDto.setComments(commentRepository.findByItem_Id(itemDto.getId())
-                .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+                .stream().map(CommentMapper.INSTANCE::toCommentDto).collect(Collectors.toList()));
         return itemDto;
     }
 
     private ItemDto setLastNextBookings(Item item) {
         ItemDto itemDto = ItemMapper.toItemDto(item);
+
         itemDto.setLastBooking(BookingMapper.toBookingDto(
-                bookingRepository.findByItemAndStartIsBeforeAndStatus(item,
-                                LocalDateTime.now(),
-                                BookingStatus.APPROVED,
-                                Sort.by("start").descending())
-                        .stream().findFirst().orElse(null)));
+                bookingRepository.findLastBooking(
+                        item,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED,
+                        PageRequest.of(0, 1)).getContent().stream().findFirst().orElse(null)));
+
         itemDto.setNextBooking(BookingMapper.toBookingDto(
-                bookingRepository.findByItemAndStartIsAfterAndStatus(item,
-                                LocalDateTime.now(),
-                                BookingStatus.APPROVED,
-                                Sort.by("start").ascending())
-                        .stream().findFirst().orElse(null)));
+                bookingRepository.findNextBooking(
+                        item,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED,
+                        PageRequest.of(0, 1)).getContent().stream().findFirst().orElse(null)));
+
         return itemDto;
     }
 
@@ -166,7 +170,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new NoSuchIdException("Item not found"));
         User user = userRepository.findById(userId).orElseThrow(() -> new NoSuchIdException("User not found"));
         Sort sort = Sort.by(Sort.Direction.DESC, "end");
-        List<Booking> bookings = bookingRepository.findByBooker_IdAndEndIsBefore(userId, LocalDateTime.now(), sort);
+        List<Booking> bookings = bookingRepository.findByBookerIdAndEndIsBefore(userId, LocalDateTime.now(), sort);
         if (bookings.isEmpty()) {
             throw new UnsupportedStateException("User has not rented this item or the rental period has not ended yet");
         }
@@ -175,7 +179,7 @@ public class ItemServiceImpl implements ItemService {
         comment.setAuthor(user);
         comment.setText(commentDto.getText());
         comment.setCreated(LocalDateTime.now());
-        return CommentMapper.toCommentDto(commentRepository.save(comment));
+        return CommentMapper.INSTANCE.toCommentDto(commentRepository.save(comment));
     }
 }
 

@@ -12,7 +12,6 @@ import ru.practicum.shareit.ShareItApp;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
-
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.ItemService;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -108,7 +107,6 @@ class ItemServiceIntegrationTest {
         assertThat(createdItem, is(notNullValue()));
         assertThat(createdItem.getId(), is(notNullValue()));
     }
-
 
     @DirtiesContext
     @Test

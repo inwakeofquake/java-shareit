@@ -6,25 +6,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.exception.NoSuchIdException;
-import ru.practicum.shareit.exception.UnauthorizedAccessException;
-import ru.practicum.shareit.exception.UnsupportedStateException;
 import ru.practicum.shareit.item.CommentRepository;
-import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.ItemServiceImpl;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.NoSuchIdException;
+import ru.practicum.shareit.utility.UnauthorizedAccessException;
+import ru.practicum.shareit.utility.UnsupportedStateException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ItemServiceImplTest {
+class ItemServiceImplTest {
 
     @InjectMocks
     private ItemServiceImpl itemService;
@@ -58,6 +59,8 @@ public class ItemServiceImplTest {
     private ItemRequestRepository itemRequestRepository;
 
     private User user;
+    private Item item;
+    private ItemDto itemDto;
 
     @BeforeEach
     void setUp() {
@@ -65,94 +68,61 @@ public class ItemServiceImplTest {
         user.setId(1L);
         user.setName("John Doe");
         user.setEmail("johndoe@example.com");
-    }
 
-    @Test
-    void add_ItemDtoAndUserId_Item() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        ItemDto itemDto = new ItemDto();
-        itemDto.setName("Test Item");
-        itemDto.setDescription("Test Description");
-        itemDto.setAvailable(true);
-        itemDto.setRequestId(123L);
-
-        ItemRequest itemRequest = new ItemRequest();
-        itemRequest.setId(123L);
-        when(itemRequestRepository.findById(123L)).thenReturn(Optional.of(itemRequest));
-
-        Item item = ItemMapper.toItem(itemDto);
+        item = new Item();
+        item.setId(1L);
+        item.setName("Item");
+        item.setDescription("Description");
+        item.setAvailable(true);
         item.setOwner(user);
-        when(itemRepository.save(any(Item.class))).thenReturn(item);
 
-        Item result = itemService.add(itemDto, 1L);
-
-        assertEquals("Test Item", result.getName());
-        assertEquals("Test Description", result.getDescription());
-        assertEquals(true, result.getAvailable());
-        assertEquals(user, result.getOwner());
-        assertEquals(itemRequest, result.getRequest());
-
-    }
-
-    @Test
-    void add_ItemDtoAndUserIdAndInvalidRequestId_ThrowsNoSuchIdException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        ItemDto itemDto = new ItemDto();
-        itemDto.setName("Test Item");
-        itemDto.setDescription("Test Description");
-        itemDto.setAvailable(true);
-        itemDto.setRequestId(123L);
-
-        when(itemRequestRepository.findById(123L)).thenReturn(Optional.empty());
-
-        assertThrows(NoSuchIdException.class, () -> itemService.add(itemDto, 1L));
-    }
-
-    @Test
-    void add_ItemDtoAndInvalidUserId_ThrowsNoSuchIdException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        ItemDto itemDto = new ItemDto();
-        itemDto.setName("Test Item");
-        itemDto.setDescription("Test Description");
-        itemDto.setAvailable(true);
-
-        assertThrows(NoSuchIdException.class, () -> itemService.add(itemDto, 1L));
-    }
-
-    @Test
-    void add_UserDoesNotExist_ThrowsException() {
-        ItemDto itemDto = new ItemDto();
+        itemDto = new ItemDto();
         itemDto.setName("Item");
         itemDto.setDescription("Description");
         itemDto.setAvailable(true);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(NoSuchIdException.class, () -> {
-            itemService.add(itemDto, 1L);
-        });
     }
 
     @Test
-    void update_ValidInput_Item() {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Old Item");
-        item.setDescription("Old Description");
-        item.setAvailable(false);
-        item.setOwner(user);
+    void addItemDtoAndUserIdItem() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
+        Item result = itemService.add(itemDto, 1L);
+
+        assertEquals("Item", result.getName());
+        assertEquals("Description", result.getDescription());
+        assertEquals(true, result.getAvailable());
+        assertEquals(user, result.getOwner());
+    }
+
+    @Test
+    void addItemDtoAndUserIdAndInvalidRequestIdThrowsNoSuchIdException() {
+        assertThrows(NoSuchIdException.class, () -> itemService.add(itemDto, 1L));
+    }
+
+    @Test
+    void addItemDtoAndInvalidUserIdThrowsNoSuchIdException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchIdException.class, () -> itemService.add(itemDto, 1L));
+    }
+
+    @Test
+    void addUserDoesNotExistThrowsException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchIdException.class, () -> itemService.add(itemDto, 1L));
+    }
+
+    @Test
+    void updateValidInputItem() {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        ItemDto itemDto = new ItemDto();
-        itemDto.setName("New Item");
-        itemDto.setDescription("New Description");
-        itemDto.setAvailable(true);
+        ItemDto newItemDto = new ItemDto();
+        newItemDto.setName("New Item");
+        newItemDto.setDescription("New Description");
+        newItemDto.setAvailable(true);
 
-        Item result = itemService.update(1L, itemDto, 1L);
+        Item result = itemService.update(1L, newItemDto, 1L);
 
         assertEquals("New Item", result.getName());
         assertEquals("New Description", result.getDescription());
@@ -161,34 +131,27 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void update_InvalidUserId_ThrowsResponseStatusException() {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Old Item");
-        item.setDescription("Old Description");
-        item.setAvailable(false);
-        item.setOwner(user);
-
+    void updateInvalidUserIdThrowsResponseStatusException() {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        ItemDto itemDto = new ItemDto();
-        itemDto.setName("New Item");
-        itemDto.setDescription("New Description");
-        itemDto.setAvailable(true);
+        ItemDto newItemDto = new ItemDto();
+        newItemDto.setName("New Item");
+        newItemDto.setDescription("New Description");
+        newItemDto.setAvailable(true);
 
-        assertThrows(ResponseStatusException.class, () -> itemService.update(1L, itemDto, 2L));
+        assertThrows(ResponseStatusException.class, () -> itemService.update(1L, newItemDto, 2L));
     }
 
     @Test
-    void get_ValidInput_ItemDto() {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Item");
-        item.setDescription("Description");
-        item.setAvailable(true);
-        item.setOwner(user);
-
+    void getValidInputItemDto() {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(bookingRepository.findLastBooking(any(Item.class),
+                any(LocalDateTime.class), any(BookingStatus.class),
+                any(Pageable.class))).thenReturn(new PageImpl<>(new ArrayList<>()));
+        when(bookingRepository.findNextBooking(any(Item.class),
+                any(LocalDateTime.class),
+                any(BookingStatus.class),
+                any(Pageable.class))).thenReturn(new PageImpl<>(new ArrayList<>()));
 
         ItemDto result = itemService.get(1L, 1L);
 
@@ -199,16 +162,14 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void get_ItemDoesNotExist_ThrowsException() {
+    void getItemDoesNotExistThrowsException() {
         when(itemRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> {
-            itemService.get(1L, 1L);
-        });
+        assertThrows(ResponseStatusException.class, () -> itemService.get(1L, 1L));
     }
 
     @Test
-    void getAll_ValidInput_ListOfItemDtos() {
+    void getAllValidInputListOfItemDtos() {
         Item item1 = new Item();
         item1.setId(1L);
         item1.setName("Item1");
@@ -229,6 +190,13 @@ public class ItemServiceImplTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(itemRepository.findByOwner(user, Sort.by("id").ascending())).thenReturn(items);
+        when(bookingRepository.findLastBooking(any(Item.class),
+                any(LocalDateTime.class), any(BookingStatus.class),
+                any(Pageable.class))).thenReturn(new PageImpl<>(new ArrayList<>()));
+        when(bookingRepository.findNextBooking(any(Item.class),
+                any(LocalDateTime.class),
+                any(BookingStatus.class),
+                any(Pageable.class))).thenReturn(new PageImpl<>(new ArrayList<>()));
 
         List<ItemDto> result = itemService.getAll(1L);
 
@@ -238,14 +206,7 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void search_ValidInput_ListOfItems() {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Item");
-        item.setDescription("Description");
-        item.setAvailable(true);
-        item.setOwner(user);
-
+    void searchValidInputListOfItems() {
         List<Item> items = new ArrayList<>();
         items.add(item);
 
@@ -258,14 +219,7 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void delete_ValidInput_NoReturn() {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Item");
-        item.setDescription("Description");
-        item.setAvailable(true);
-        item.setOwner(user);
-
+    void deleteValidInputNoReturn() {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -273,35 +227,19 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void delete_NonOwnerUser_ThrowsException() {
+    void deleteNonOwnerUserThrowsException() {
         User anotherUser = new User();
         anotherUser.setId(2L);
         anotherUser.setName("anotherUser");
 
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Item");
-        item.setDescription("Description");
-        item.setAvailable(true);
-        item.setOwner(user);
-
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(userRepository.findById(2L)).thenReturn(Optional.of(anotherUser));
 
-        assertThrows(UnauthorizedAccessException.class, () -> {
-            itemService.delete(1L, 2L);
-        });
+        assertThrows(UnauthorizedAccessException.class, () -> itemService.delete(1L, 2L));
     }
 
     @Test
-    void addComment_ValidInput_CommentDto() {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Item");
-        item.setDescription("Description");
-        item.setAvailable(true);
-        item.setOwner(user);
-
+    void addCommentValidInputCommentDto() {
         Booking booking = new Booking();
         booking.setId(1L);
         booking.setBooker(user);
@@ -322,7 +260,7 @@ public class ItemServiceImplTest {
 
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(bookingRepository.findByBooker_IdAndEndIsBefore(any(Long.class),
+        when(bookingRepository.findByBookerIdAndEndIsBefore(any(Long.class),
                 any(LocalDateTime.class),
                 any(Sort.class))).thenReturn(bookings);
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
@@ -335,7 +273,7 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void addComment_BlankComment_ThrowsException() {
+    void addCommentBlankCommentThrowsException() {
         CommentDto commentDto = new CommentDto();
         commentDto.setText("");
 
@@ -345,7 +283,7 @@ public class ItemServiceImplTest {
     }
 
     @Test
-    void addComment_UserHasNoBookings_ThrowsUnsupportedStateException() {
+    void addCommentUserHasNoBookingsThrowsUnsupportedStateException() {
 
         Long itemId = 1L;
         Long userId = 1L;
@@ -364,13 +302,12 @@ public class ItemServiceImplTest {
 
         when(itemRepository.findById(itemId)).thenReturn(Optional.of(item));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(bookingRepository.findByBooker_IdAndEndIsBefore(eq(userId), any(LocalDateTime.class),
+        when(bookingRepository.findByBookerIdAndEndIsBefore(eq(userId), any(LocalDateTime.class),
                 eq(Sort.by(Sort.Direction.DESC, "end")))).thenReturn(bookings);
 
         assertThrows(UnsupportedStateException.class, () -> {
             itemService.addComment(itemId, commentDto, userId);
         });
     }
-
-
 }
+

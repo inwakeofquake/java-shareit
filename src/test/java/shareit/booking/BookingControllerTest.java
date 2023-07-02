@@ -17,8 +17,7 @@ import ru.practicum.shareit.booking.BookingController;
 import ru.practicum.shareit.booking.BookingService;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.exception.BadRequestException;
-import ru.practicum.shareit.exception.UnsupportedStateException;
+import ru.practicum.shareit.utility.UnsupportedStateException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -27,6 +26,7 @@ import java.util.List;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.practicum.shareit.utility.Constants.HEADER_USER_ID;
 
 @WebMvcTest(controllers = BookingController.class)
 @ContextConfiguration(classes = ShareItApp.class)
@@ -83,7 +83,7 @@ class BookingControllerTest {
                         .content(mapper.writeValueAsString(bookingDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated());
     }
@@ -94,7 +94,7 @@ class BookingControllerTest {
                 .thenReturn(booking);
 
         mvc.perform(patch("/bookings/1?approved=true")
-                        .header("X-Sharer-User-Id", 2L)
+                        .header(HEADER_USER_ID, 2L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
@@ -105,7 +105,7 @@ class BookingControllerTest {
                 .thenReturn(booking);
 
         mvc.perform(get("/bookings/1")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
@@ -116,7 +116,7 @@ class BookingControllerTest {
                 .thenReturn(List.of(booking));
 
         mvc.perform(get("/bookings/")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .param("from", "0")
                         .param("size", "1000")
                         .param("state", "ALL")
@@ -126,11 +126,8 @@ class BookingControllerTest {
 
     @Test
     void getUserBookingsBadRequest() throws Exception {
-        when(bookingService.getUserBookings("ALL", 1L, -1, 0))
-                .thenThrow(new BadRequestException("Invalid page params"));
-
         mvc.perform(get("/bookings/")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .param("from", "-1")
                         .param("size", "0")
                         .param("state", "ALL")
@@ -144,7 +141,7 @@ class BookingControllerTest {
                 .thenThrow(new UnsupportedStateException("Invalid state"));
 
         mvc.perform(get("/bookings/")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .param("from", "0")
                         .param("size", "10")
                         .param("state", "SOMES")
@@ -158,7 +155,7 @@ class BookingControllerTest {
                 .thenReturn(List.of(booking));
 
         mvc.perform(get("/bookings/owner")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .param("from", "0")
                         .param("size", "1000")
                         .param("state", "ALL")

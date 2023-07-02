@@ -5,16 +5,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.request.ItemRequestMapper;
 import ru.practicum.shareit.request.ItemRequestRepository;
-import ru.practicum.shareit.request.ItemRequestService;
+import ru.practicum.shareit.request.ItemRequestServiceImpl;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.NoSuchIdException;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,10 +25,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
-class ItemRequestServiceImplTest {
+class ItemRequestServiceImplImplTest {
 
     @InjectMocks
-    ItemRequestService itemRequestService;
+    ItemRequestServiceImpl itemRequestServiceImpl;
     @Mock
     ItemRequestRepository itemRequestRepository;
     @Mock
@@ -54,7 +53,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(itemRequestRepository.save(any(ItemRequest.class))).thenReturn(request);
 
-        ItemRequestDto result = itemRequestService.createRequest(requestDto, user.getId());
+        ItemRequestDto result = itemRequestServiceImpl.createRequest(requestDto, user.getId());
 
         assertEquals(requestDto.getId(), result.getId());
         assertEquals(requestDto.getDescription(), result.getDescription());
@@ -65,7 +64,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NoSuchIdException.class, () -> {
-            itemRequestService.createRequest(requestDto, user.getId());
+            itemRequestServiceImpl.createRequest(requestDto, user.getId());
         });
     }
 
@@ -74,7 +73,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(itemRequestRepository.findByRequestorOrderByCreatedDesc(any(User.class))).thenReturn(Collections.singletonList(request));
 
-        List<ItemRequestDto> results = itemRequestService.getOwnRequests(user.getId());
+        List<ItemRequestDto> results = itemRequestServiceImpl.getOwnRequests(user.getId());
 
         assertEquals(1, results.size());
         assertEquals(requestDto.getId(), results.get(0).getId());
@@ -87,14 +86,16 @@ class ItemRequestServiceImplTest {
         ItemRequest itemRequest = new ItemRequest();
         itemRequest.setId(1L); // Assign an ID to itemRequest
         itemRequest.setRequestor(differentUser);
-        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
-        when(itemRequestRepository.findAllByOrderByCreatedDesc(any(PageRequest.class)))
-                .thenReturn(new PageImpl<>(Collections.singletonList(itemRequest)));
 
-        List<ItemRequestDto> results = itemRequestService.getAllRequests(user.getId(), PageRequest.of(0, 10));
+        when(userRepository.existsById(anyLong())).thenReturn(true);
+        when(itemRequestRepository.findByRequestorIdNotOrderByCreatedDesc(anyLong(), any(PageRequest.class)))
+                .thenReturn(Collections.singletonList(itemRequest));
+
+        List<ItemRequestDto> results = itemRequestServiceImpl.getAllRequests(user.getId(), PageRequest.of(0, 10));
 
         assertEquals(1, results.size());
         assertEquals(itemRequest.getId(), results.get(0).getId());
+        // Assuming requestDto is of type ItemRequestDto and has a description field
         assertEquals(requestDto.getDescription(), results.get(0).getDescription());
     }
 
@@ -103,7 +104,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(itemRequestRepository.findById(anyLong())).thenReturn(Optional.of(request));
 
-        ItemRequestDto result = itemRequestService.getRequest(request.getId(), user.getId());
+        ItemRequestDto result = itemRequestServiceImpl.getRequest(request.getId(), user.getId());
 
         assertEquals(requestDto.getId(), result.getId());
         assertEquals(requestDto.getDescription(), result.getDescription());
@@ -114,7 +115,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NoSuchIdException.class, () -> {
-            itemRequestService.getRequest(request.getId(), user.getId());
+            itemRequestServiceImpl.getRequest(request.getId(), user.getId());
         });
     }
 
@@ -124,7 +125,7 @@ class ItemRequestServiceImplTest {
         when(itemRequestRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NoSuchIdException.class, () -> {
-            itemRequestService.getRequest(request.getId(), user.getId());
+            itemRequestServiceImpl.getRequest(request.getId(), user.getId());
         });
     }
 
@@ -133,7 +134,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NoSuchIdException.class, () -> {
-            itemRequestService.getOwnRequests(user.getId());
+            itemRequestServiceImpl.getOwnRequests(user.getId());
         });
     }
 
@@ -142,7 +143,7 @@ class ItemRequestServiceImplTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NoSuchIdException.class, () -> {
-            itemRequestService.getAllRequests(user.getId(), PageRequest.of(0, 10));
+            itemRequestServiceImpl.getAllRequests(user.getId(), PageRequest.of(0, 10));
         });
     }
 

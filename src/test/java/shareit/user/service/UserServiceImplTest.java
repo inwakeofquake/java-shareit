@@ -2,19 +2,19 @@ package shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ContextConfiguration;
 import ru.practicum.shareit.ShareItApp;
-import ru.practicum.shareit.exception.InvalidInputException;
-import ru.practicum.shareit.exception.NoSuchIdException;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.UserServiceImpl;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.InvalidInputException;
+import ru.practicum.shareit.utility.NoSuchIdException;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,19 +35,35 @@ class UserServiceImplTest {
 
     @MockBean
     private final UserRepository userRepository;
-    private static UserDto user1;
-    private static UserDto user2;
 
-    @BeforeAll
-    public static void setUp() {
-        user1 = UserDto.builder()
+    private List<User> users;
+
+    @BeforeEach
+    void setUp() {
+        UserDto user1 = UserDto.builder()
+                .id(1L)
                 .name("test name")
                 .email("test@test.ru")
                 .build();
-        user2 = UserDto.builder()
+        UserDto user2 = UserDto.builder()
+                .id(2L)
                 .name("test name 2")
                 .email("test2@test.ru")
                 .build();
+
+        User user1Entity = User.builder()
+                .id(1L)
+                .name("test name")
+                .email("test@test.ru")
+                .build();
+        User user2Entity = User.builder()
+                .id(2L)
+                .name("test name 2")
+                .email("test2@test.ru")
+                .build();
+
+        users = List.of(user1Entity, user2Entity);
+        List<UserDto> userDtos = List.of(user1, user2);
     }
 
     @Test
@@ -73,6 +89,7 @@ class UserServiceImplTest {
     @Test
     void update() {
         UserDto userDto = UserDto.builder()
+                .id(1L)
                 .name("name updated")
                 .email("userUpdated@email.com")
                 .build();
@@ -100,6 +117,7 @@ class UserServiceImplTest {
     @Test
     void throwUserNotFoundException() {
         UserDto userDto = UserDto.builder()
+                .id(1L)
                 .name("name updated")
                 .email("userUpdated@email.com")
                 .build();
@@ -126,7 +144,7 @@ class UserServiceImplTest {
         User user = User.builder()
                 .id(1L)
                 .name("name")
-                .email("user@email.com")
+                .email("user@test.com")
                 .build();
 
         when(userRepository.findById(1L))
@@ -139,22 +157,13 @@ class UserServiceImplTest {
 
     @Test
     void delete() {
-
         userService.delete(1L);
 
         verify(userRepository, times(1)).deleteById(1L);
-
     }
 
     @Test
     void getAll() {
-
-        List<User> users = List.of(User.builder()
-                .id(1L)
-                .name("name")
-                .email("user@email.com")
-                .build());
-
         when(userRepository.findAll())
                 .thenReturn(users);
 

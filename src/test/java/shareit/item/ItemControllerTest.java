@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import static ru.practicum.shareit.utility.Constants.HEADER_USER_ID;
 
 @WebMvcTest(controllers = ItemController.class)
 @ContextConfiguration(classes = ShareItApp.class)
@@ -127,13 +127,12 @@ class ItemControllerTest {
 
         when(itemService.add(any(ItemDto.class), anyLong())).thenReturn(itemMock);
 
-
         ItemDto itemDtoMock = ItemMapper.toItemDto(itemMock);
 
         mvc.perform(post("/items")
                         .content(mapper.writeValueAsString(itemDtoMock))
                         .characterEncoding(StandardCharsets.UTF_8.toString())
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
@@ -145,8 +144,6 @@ class ItemControllerTest {
                 .andExpect(jsonPath("$.owner.name", is(itemDtoMock.getOwner().getName())))
                 .andExpect(jsonPath("$.owner.email", is(itemDtoMock.getOwner().getEmail())));
     }
-
-
 
     @Test
     void update() throws Exception {
@@ -160,13 +157,12 @@ class ItemControllerTest {
 
         when(itemService.update(anyLong(), any(ItemDto.class), anyLong())).thenReturn(itemMock);
 
-
         ItemDto itemDtoMock = ItemMapper.toItemDto(itemMock);
 
         mvc.perform(patch("/items/1")
                         .content(mapper.writeValueAsString(itemDtoMock))
                         .characterEncoding(StandardCharsets.UTF_8)
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -179,14 +175,13 @@ class ItemControllerTest {
                 .andExpect(jsonPath("$.owner.email", is(itemDtoMock.getOwner().getEmail())));
     }
 
-
     @Test
     void getItemDto() throws Exception {
         when(itemService.get(1L, 1L))
                 .thenReturn(itemDtoUpdated);
 
         mvc.perform(get("/items/1")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(itemDtoUpdated.getId()), Long.class))
@@ -201,7 +196,7 @@ class ItemControllerTest {
                 .thenReturn(List.of(itemDtoUpdated));
 
         mvc.perform(get("/items/")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id", is(itemDtoUpdated.getId()), Long.class))
@@ -212,21 +207,19 @@ class ItemControllerTest {
 
     @Test
     void search() throws Exception {
-        // Prepare your Item mock
+
         Item itemMock = new Item();
         itemMock.setId(1L);
         itemMock.setName("name");
         itemMock.setDescription("description");
         itemMock.setAvailable(true);
 
-        // Mock the `search` method to return a list of `Item` objects
         when(itemService.search("update")).thenReturn(Collections.singletonList(itemMock));
 
-        // Convert the `Item` mock to `ItemDto`
         ItemDto itemDtoMock = ItemMapper.toItemDto(itemMock);
 
         mvc.perform(get("/items/search?text=update")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id", is(itemDtoMock.getId().intValue())))
@@ -236,14 +229,12 @@ class ItemControllerTest {
                 .andExpect(jsonPath("$[0].owner", is(itemDtoMock.getOwner())));
     }
 
-
-
     @Test
     void deleteItem() throws Exception {
         doNothing().when(itemService).delete(1L, 1L);
 
         mvc.perform(delete("/items/1")
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
@@ -256,7 +247,7 @@ class ItemControllerTest {
         mvc.perform(post("/items/1/comment")
                         .content(mapper.writeValueAsString(commentDtoCreateTest))
                         .characterEncoding(StandardCharsets.UTF_8.toString())
-                        .header("X-Sharer-User-Id", 1L)
+                        .header(HEADER_USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

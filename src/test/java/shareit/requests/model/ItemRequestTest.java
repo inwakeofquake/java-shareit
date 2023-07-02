@@ -1,25 +1,33 @@
 package shareit.requests.model;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.shareit.request.ItemRequest;
 
 class ItemRequestTest {
 
-    @Test
-    void testEquals() {
-        ItemRequest itemRequest1 = ItemRequest.builder()
+    private ItemRequest itemRequest1;
+    private ItemRequest itemRequest2;
+    private ItemRequest itemRequest3;
+
+    @BeforeEach
+    void setUp() {
+        itemRequest1 = ItemRequest.builder()
                 .id(1L)
                 .build();
 
-        ItemRequest itemRequest2 = ItemRequest.builder()
+        itemRequest2 = ItemRequest.builder()
                 .id(1L)
                 .build();
 
-        ItemRequest itemRequest3 = ItemRequest.builder()
+        itemRequest3 = ItemRequest.builder()
                 .id(null)
                 .build();
+    }
 
+    @Test
+    void testEquals() {
         Assertions.assertEquals(itemRequest1, itemRequest2);
         Assertions.assertEquals(itemRequest1, itemRequest1);
         Assertions.assertNotEquals(itemRequest1, itemRequest3);
@@ -28,14 +36,6 @@ class ItemRequestTest {
 
     @Test
     void testHashCode() {
-        ItemRequest itemRequest1 = ItemRequest.builder()
-                .id(1L)
-                .build();
-
-        ItemRequest itemRequest2 = ItemRequest.builder()
-                .id(1L)
-                .build();
-
         Assertions.assertEquals(itemRequest1.hashCode(), itemRequest2.hashCode());
     }
 }

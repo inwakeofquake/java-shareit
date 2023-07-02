@@ -1,7 +1,6 @@
 package ru.practicum.shareit.booking;
 
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -10,13 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.exception.BadRequestException;
-import ru.practicum.shareit.exception.NoSuchIdException;
-import ru.practicum.shareit.exception.UnsupportedStateException;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.BadRequestException;
+import ru.practicum.shareit.utility.NoSuchIdException;
+import ru.practicum.shareit.utility.UnsupportedStateException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -103,15 +102,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public List<Booking> getUserBookings(String stateString, Long userId, Integer from, Integer size) {
-        Pageable pageable;
-        if ((from == null) || (size == null)) {
-            pageable = Pageable.unpaged();
-        } else {
-            if ((from < 0) || (size == 0)) {
-                throw new BadRequestException("Bad page params");
-            }
-            pageable = PageRequest.of(from / size, size, Sort.by("start").descending());
-        }
+
+        Pageable pageable = CustomPageRequest.of(from, size, Sort.by("start").descending());
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchIdException("User not found"));
 

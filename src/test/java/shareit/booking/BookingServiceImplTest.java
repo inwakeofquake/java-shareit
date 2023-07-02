@@ -6,24 +6,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.web.server.ResponseStatusException;
-import ru.practicum.shareit.booking.BookingRepository;
-import ru.practicum.shareit.booking.BookingRequestState;
-import ru.practicum.shareit.booking.BookingServiceImpl;
-import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.exception.BadRequestException;
-import ru.practicum.shareit.exception.NoSuchIdException;
-import ru.practicum.shareit.exception.UnsupportedStateException;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utility.BadRequestException;
+import ru.practicum.shareit.utility.NoSuchIdException;
+import ru.practicum.shareit.utility.UnsupportedStateException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -161,7 +155,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_UserDoesNotExist_ThrowsException() {
+    void createUserDoesNotExistThrowsException() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(ResponseStatusException.class, () -> {
@@ -191,7 +185,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void approveOrReject_notFound() {
+    void approveOrRejectNotFound() {
         Long bookingId = 1L;
         boolean approved = true;
 
@@ -203,7 +197,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void approveOrReject_UserIsNotOwner_ThrowsException() {
+    void approveOrRejectUserIsNotOwnerThrowsException() {
         Long bookingId = 1L;
         boolean approved = true;
 
@@ -237,6 +231,8 @@ class BookingServiceImplTest {
 
     @Test
     void getUserBookings() {
+        Integer from = 0;
+        Integer size = 2;
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
@@ -253,28 +249,24 @@ class BookingServiceImplTest {
         bookingList.add(booking2);
         Page<Booking> bookings = new PageImpl<>(bookingList);
 
-        when(bookingRepository.findByBooker(user, Pageable.unpaged())).thenReturn(bookings);
+        when(bookingRepository.findByBooker(user, CustomPageRequest.of(from, size, Sort.by("start")
+                .descending()))).thenReturn(bookings);
 
-        List<Booking> allBookings = bookingService.getUserBookings("ALL", user.getId(), null, null);
+        List<Booking> allBookings = bookingService.getUserBookings("ALL", user.getId(), from, size);
         assertEquals(bookings.getContent(), allBookings);
-        verify(bookingRepository, times(1)).findByBooker(user, Pageable.unpaged());
+        verify(bookingRepository, times(1))
+                .findByBooker(user, CustomPageRequest.of(from, size, Sort.by("start").descending()));
 
         reset(bookingRepository);
 
-        when(bookingRepository.findByBookerAndStatus(user, BookingStatus.WAITING, Pageable.unpaged()))
-                .thenReturn(bookings);
+        when(bookingRepository.findByBookerAndStatus(user, BookingStatus.WAITING, CustomPageRequest
+                .of(from, size, Sort.by("start").descending()))).thenReturn(bookings);
 
-        List<Booking> waitingBookings = bookingService.getUserBookings("WAITING", user.getId(),
-                null, null);
+        List<Booking> waitingBookings = bookingService.getUserBookings("WAITING", user.getId(), from, size);
         assertEquals(bookings.getContent(), waitingBookings);
-        verify(bookingRepository, times(1)).findByBookerAndStatus(user, BookingStatus.WAITING,
-                Pageable.unpaged());
-    }
-
-    @Test
-    void getUserBookingsThrowsBadPageParams() {
-        assertThrows(BadRequestException.class, () -> bookingService
-                .getUserBookings("ALL", 1L, -1, 0));
+        verify(bookingRepository, times(1))
+                .findByBookerAndStatus(user, BookingStatus.WAITING, CustomPageRequest
+                        .of(from, size, Sort.by("start").descending()));
     }
 
     @Test
@@ -314,7 +306,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_ItemDoesNotExist_ThrowsException() {
+    void createItemDoesNotExistThrowsException() {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(itemRepository.findById(anyLong())).thenReturn(Optional.empty());
 
@@ -328,7 +320,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_ItemNotAvailable_ThrowsException() {
+    void createItemNotAvailableThrowsException() {
         item.setAvailable(false);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(itemRepository.findById(bookingDto.getItemId())).thenReturn(Optional.of(item));
@@ -339,7 +331,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_EndDateBeforeStartDate_ThrowsException() {
+    void createEndDateBeforeStartDateThrowsException() {
         LocalDateTime start = LocalDateTime.now().plusDays(2L);
         LocalDateTime end = LocalDateTime.now().plusDays(1L);
 
@@ -355,7 +347,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_EndDateEqualsStartDate_ThrowsException() {
+    void createEndDateEqualsStartDateThrowsException() {
         LocalDateTime start = LocalDateTime.of(2023, 5, 5, 10, 10);
         LocalDateTime end = LocalDateTime.of(2023, 5, 5, 10, 10);
 
@@ -371,7 +363,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_BookOwnItem_ThrowsException() {
+    void createBookOwnItemThrowsException() {
         Long userId = 2L;
         user.setId(userId);
 
@@ -384,7 +376,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void create_BookingConflict_ThrowsException() {
+    void createBookingConflictThrowsException() {
         List<Booking> bookings = new ArrayList<>();
 
         Booking existingBooking = Booking.builder()
@@ -408,7 +400,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookings_WithNonExistentUserId_ThrowsException() {
+    void getUserBookingsWithNonExistentUserIdThrowsException() {
         Long nonExistentUserId = 123L; // Non-existent user ID
         String stateString = "ALL";
         Integer from = 0;
@@ -422,7 +414,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookings_WithInvalidState_ThrowsException() {
+    void getUserBookingsWithInvalidStateThrowsException() {
         String invalidStateString = "INVALID_STATE";
         Integer from = 0;
         Integer size = 5;
@@ -435,29 +427,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookings_WithInvalidFrom_ThrowsException() {
-        String stateString = "ALL";
-        Integer invalidFrom = -1;
-        Integer size = 5;
-
-        assertThrows(BadRequestException.class, () -> {
-            bookingService.getUserBookings(stateString, userId, invalidFrom, size);
-        });
-    }
-
-    @Test
-    void getUserBookings_WithInvalidSize_ThrowsException() {
-        String stateString = "ALL";
-        Integer from = 0;
-        Integer invalidSize = 0;
-
-        assertThrows(BadRequestException.class, () -> {
-            bookingService.getUserBookings(stateString, userId, from, invalidSize);
-        });
-    }
-
-    @Test
-    void getOwnerBookings_WithNonExistentUserId_ThrowsException() {
+    void getOwnerBookingsWithNonExistentUserIdThrowsException() {
         Long nonExistentUserId = 123L; // Non-existent user ID
         String stateString = "ALL";
         Pageable pageable = PageRequest.of(0, 5);
@@ -470,7 +440,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_WithInvalidState_ThrowsException() {
+    void getOwnerBookingsWithInvalidStateThrowsException() {
         String invalidStateString = "INVALID_STATE";
         Pageable pageable = PageRequest.of(0, 5);
 
@@ -482,7 +452,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookings_PastBookings_ReturnsPastBookings() {
+    void getUserBookingsPastBookingsReturnsPastBookings() {
         Booking pastBooking = createPastBooking();
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(bookingRepository.findByBookerAndEndIsBefore(eq(user), any(LocalDateTime.class), any(Pageable.class)))
@@ -495,7 +465,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookings_FutureBookings_ReturnsFutureBookings() {
+    void getUserBookingsFutureBookingsReturnsFutureBookings() {
         Booking futureBooking = createFutureBooking();
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(bookingRepository.findByBookerAndStartIsAfter(eq(user), any(LocalDateTime.class), any(Pageable.class)))
@@ -508,7 +478,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookings_CurrentBookings_ReturnsCurrentBookings() {
+    void getUserBookingsCurrentBookingsReturnsCurrentBookings() {
         Booking currentBooking = createCurrentBooking();
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(bookingRepository.findByBookerAndStartIsBeforeAndEndIsAfter(eq(user),
@@ -522,7 +492,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_All_ReturnsBookings() {
+    void getOwnerBookingsAllReturnsBookings() {
         Pageable pageable = Pageable.unpaged();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(bookingRepository.findByItemOwner(user, pageable)).thenReturn(new PageImpl<>(List.of(booking, pastBooking,
@@ -534,7 +504,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_Past_ReturnsPastBookings() {
+    void getOwnerBookingsPastReturnsPastBookings() {
         Pageable pageable = Pageable.unpaged();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(bookingRepository.findByItemOwnerAndEndIsBefore(eq(user), any(LocalDateTime.class), eq(pageable)))
@@ -547,7 +517,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_Current_ReturnsCurrentBookings() {
+    void getOwnerBookingsCurrentReturnsCurrentBookings() {
         Pageable pageable = Pageable.unpaged();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(bookingRepository.findByItemOwnerAndStartIsBeforeAndEndIsAfter(eq(user), any(LocalDateTime.class),
@@ -559,7 +529,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_Waiting_ReturnsWaitingBookings() {
+    void getOwnerBookingsWaitingReturnsWaitingBookings() {
         Pageable pageable = Pageable.unpaged();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(bookingRepository.findByItemOwnerAndStatus(user, BookingStatus.WAITING, pageable))
@@ -572,7 +542,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_Rejected_ReturnsRejectedBookings() {
+    void getOwnerBookingsRejectedReturnsRejectedBookings() {
         Pageable pageable = Pageable.unpaged();
         Booking rejectedBooking = Booking.builder()
                 .id(7L)
@@ -593,7 +563,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_InvalidState_ThrowsException() {
+    void getOwnerBookingsInvalidStateThrowsException() {
         Pageable pageable = Pageable.unpaged();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
@@ -602,7 +572,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getOwnerBookings_NullState_ThrowsException() {
+    void getOwnerBookingsNullStateThrowsException() {
         Pageable pageable = Pageable.unpaged();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 

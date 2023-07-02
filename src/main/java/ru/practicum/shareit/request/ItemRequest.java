@@ -5,6 +5,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,14 +23,17 @@ public class ItemRequest {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description")
+    @NotNull
     private String description;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "requestor_id", nullable = false)
+    @JoinColumn(name = "requestor_id")
+    @NotNull
     private User requestor;
 
-    @Column(name = "created", nullable = false)
+    @Column(name = "created")
+    @NotNull
     private LocalDateTime created;
 
     @OneToMany(mappedBy = "request", fetch = FetchType.EAGER)
