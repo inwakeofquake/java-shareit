@@ -1,4 +1,4 @@
-package ru.practicum.shareit.exception;
+package ru.practicum.shareit.utility;
 
 public class BadRequestException extends RuntimeException {
     public BadRequestException(String message) {

@@ -1,11 +1,14 @@
-package ru.practicum.shareit.item;
+package ru.practicum.shareit.item.model;
 
-import lombok.*;
-import ru.practicum.shareit.item.model.Item;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,13 +28,16 @@ public class Comment {
     private String text;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "item_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "item_id", referencedColumnName = "id")
+    @NotNull
     private Item item;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "author_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "author_id", referencedColumnName = "id")
+    @NotNull
     private User author;
 
-    @Column(name = "created", nullable = false)
+    @Column(name = "created")
+    @NotNull
     private LocalDateTime created;
 }

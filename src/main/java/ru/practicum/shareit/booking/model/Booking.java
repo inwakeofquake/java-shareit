@@ -16,10 +16,12 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "bookings")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
+    @EqualsAndHashCode.Include
     private Long id;
 
     @NotNull
