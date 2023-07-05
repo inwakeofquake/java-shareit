@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+
+  gateway:
+    build: gateway/shareit-gateway
+    image: gateway
+    container_name: gateway_container
+    ports:
+      - "8080:8080"
+    depends_on:
+      - server
+      - db
+    environment:
+      - SHAREIT_SERVER_URL=http://server:9090
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+
+  server:
+    build: server/shareit-server
+    image: server
+    container_name: server_container
+    ports:
+      - "9090:9090"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
+      - SPRING_DATASOURCE_USERNAME=kuzmin
+      - SPRING_DATASOURCE_PASSWORD=kuzmin
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+
+  db:
+    image: postgres:15.1-alpine
+    container_name: postgres_db_container
+    ports:
+      - "6541:5432"
+    environment:
+      - POSTGRES_DB=shareit
+      - POSTGRES_USER=kuzmin
+      - POSTGRES_PASSWORD=kuzmin
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
