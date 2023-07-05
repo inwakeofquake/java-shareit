@@ -10,7 +10,6 @@ services:
       - "8080:8080"
     depends_on:
       - server
-      - db
     environment:
       - SHAREIT_SERVER_URL=http://server:9090
     volumes:
@@ -26,6 +25,7 @@ services:
     depends_on:
       - db
     environment:
+      - SERVER_PORT=9090
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
       - SPRING_DATASOURCE_USERNAME=kuzmin
       - SPRING_DATASOURCE_PASSWORD=kuzmin
