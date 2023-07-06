@@ -1,24 +1,22 @@
 version: '3.8'
-
 services:
-
   gateway:
-    build: ./gateway
+    build: gateway
     image: gateway_image
-    container_name: "gateway"
+    container_name: gateway
     ports:
       - "8080:8080"
     depends_on:
       - server
     environment:
+      - SERVER_PORT=8080
       - SHAREIT_SERVER_URL=http://server:9090
       - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
 
   server:
-    restart: on-failure
-    build: ./server
+    build: server
     image: server_image
-    container_name: "server"
+    container_name: server
     ports:
       - "9090:9090"
     depends_on:
@@ -29,14 +27,14 @@ services:
       - SPRING_DATASOURCE_USERNAME=shareit
       - SPRING_DATASOURCE_PASSWORD=shareit
       - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
-#empty line
+
   db:
     image: postgres:14.7-alpine
-    container_name: "db"
+    container_name: db
     ports:
       - "6541:5432"
     environment:
       - POSTGRES_DB=shareit
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=shareit
+      - POSTGRES_PASSWORD=shareit
       - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
