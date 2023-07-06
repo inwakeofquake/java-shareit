@@ -12,9 +12,7 @@ services:
       - server
     environment:
       - SHAREIT_SERVER_URL=http://server:9090
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/etc/timezone:/etc/timezone:ro"
+      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
 
   server:
     restart: on-failure
@@ -26,17 +24,11 @@ services:
     depends_on:
       - db
     environment:
+      - SERVER_PORT=9090
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=root
-      - DB_NAME=shareit
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
-      - DB_HOST=db
-      - DB_PORT=6541
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/etc/timezone:/etc/timezone:ro"
+      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
 
   db:
     image: postgres:14.7-alpine
@@ -47,6 +39,4 @@ services:
       - POSTGRES_DB=shareit
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/etc/timezone:/etc/timezone:ro"
+      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
