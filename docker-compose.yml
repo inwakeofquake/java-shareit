@@ -9,7 +9,6 @@ services:
     depends_on:
       - server
     environment:
-      - SERVER_PORT=8080
       - SHAREIT_SERVER_URL=http://server:9090
 #      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
 
@@ -22,10 +21,7 @@ services:
     depends_on:
       - db
     environment:
-      - SERVER_PORT=9090
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
-      - SPRING_DATASOURCE_USERNAME=shareit
-      - SPRING_DATASOURCE_PASSWORD=shareit
 #      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
 
   db:
