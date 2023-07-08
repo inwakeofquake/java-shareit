@@ -22,8 +22,7 @@ public class ItemRequestGateway {
 
     @PostMapping
     public ResponseEntity<Object> create(@RequestHeader(HEADER_USER_ID) Long userId,
-                                         @Valid @RequestBody ItemRequestDto itemRequestDto
-    ) {
+                                         @Valid @RequestBody ItemRequestDto itemRequestDto) {
         return itemRequestClient.create(userId, itemRequestDto);
     }
 

@@ -19,7 +19,7 @@ import static ru.practicum.shareit.utility.Constants.HEADER_USER_ID;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-public class BookingGateway {
+public class BookingGatewayController {
     private final BookingClient bookingClient;
 
     @PostMapping
